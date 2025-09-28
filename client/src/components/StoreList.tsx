@@ -39,6 +39,18 @@ const StoreList: FC<StoreListProps> = ({ onStoreSelect }) => {
       displayName: 'Sobeys',
       color: 'bg-blue-600',
     },
+    {
+      id: 'saveonfoods',
+      name: 'SaveOnFoods',
+      displayName: 'SaveOnFoods',
+      color: 'bg-green-600',
+    },
+    {
+      id: 'wallmart',
+      name: 'Wallmart',
+      displayName: 'Wallmart',
+      color: 'bg-blue-600',
+    },
   ];
 
   const handleStoreClick = (storeId: string) => {
@@ -83,12 +95,6 @@ const StoreList: FC<StoreListProps> = ({ onStoreSelect }) => {
             </div>
           </button>
         ))}
-      </div>
-      
-      <div className="text-center">
-        <p className="text-notion-xs text-notion-400">
-          Click on a store to see available products (coming soon)
-        </p>
       </div>
     </div>
   );

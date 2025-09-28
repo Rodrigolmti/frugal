@@ -2,6 +2,8 @@ const RealCanadianSuperstore = require('./realCanadianSuperstore');
 const Safeway = require('./safeway');
 const NoFrills = require('./noFrills');
 const Sobeys = require('./sobeys');
+const SaveOnFoods = require('./saveOnFoods');
+const Walmart = require('./walmart');
 
 // Store registry - add new stores here
 const stores = {
@@ -9,6 +11,8 @@ const stores = {
   'safeway': new Safeway(),
   'no-frills': new NoFrills(),
   'sobeys': new Sobeys(),
+  'save-on-foods': new SaveOnFoods(),
+  'walmart': new Walmart(),
   // Add more stores here as they're implemented
   // 'metro': new Metro(),
   // 'loblaws': new Loblaws(),
