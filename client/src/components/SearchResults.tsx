@@ -1,7 +1,7 @@
 import React from 'react';
 import { SearchResults as SearchResultsType, Product, ComparisonProduct } from '../types';
 import ProductCard from './ProductCard';
-import { AlertTriangle, Store } from 'lucide-react';
+import { AlertTriangle, Store, ShoppingBag } from 'lucide-react';
 
 interface SearchResultsProps {
   results: SearchResultsType;
@@ -26,27 +26,34 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 
   if (!hasAnyProducts) {
     return (
-      <div className="text-center py-12">
-        <AlertTriangle className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-        <h3 className="text-lg font-medium text-gray-900 mb-2">No products found</h3>
-        <p className="text-gray-600">
-          Try searching with different keywords or check your spelling.
+      <div className="text-center py-notion-3xl">
+        <div className="w-16 h-16 bg-notion-100 rounded-notion-lg flex items-center justify-center mx-auto mb-notion-lg">
+          <ShoppingBag className="h-8 w-8 text-notion-400" />
+        </div>
+        <h3 className="text-notion-subheading mb-notion-sm">No products found</h3>
+        <p className="text-notion-caption max-w-md mx-auto">
+          Try searching with different keywords or check your spelling. Make sure to use specific product names for better results.
         </p>
       </div>
     );
   }
 
   return (
-    <div className="space-y-8">
+    <div className="space-y-notion-2xl">
       {/* Header with Compare Button */}
       <div className="flex items-center justify-between">
-        <h2 className="text-2xl font-bold text-gray-900">
-          Search Results for "{results.searchTerm}"
-        </h2>
+        <div>
+          <h2 className="text-notion-heading mb-notion-sm">
+            Search Results
+          </h2>
+          <p className="text-notion-caption">
+            Found results for "{results.searchTerm}"
+          </p>
+        </div>
         {selectedCount > 1 && (
           <button
             onClick={onCompare}
-            className="btn-primary px-6 py-3"
+            className="btn-notion-primary px-notion-xl py-notion-md"
           >
             Compare {selectedCount} Products
           </button>
@@ -55,51 +62,59 @@ const SearchResults: React.FC<SearchResultsProps> = ({
 
       {/* Selection Instructions */}
       {selectedCount === 0 && (
-        <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-          <p className="text-blue-800 text-sm">
-            <strong>How it works:</strong> Select one product from each store to compare prices. 
-            Choose products that are similar or equivalent across different stores.
+        <div className="bg-notion-blue-light border border-notion-blue border-opacity-20 rounded-notion-lg p-notion-lg">
+          <p className="text-notion-body text-notion-blue">
+            Select products from different stores to compare prices. Choose similar or equivalent items for the best comparison.
           </p>
         </div>
       )}
 
       {selectedCount === 1 && (
-        <div className="bg-amber-50 border border-amber-200 rounded-lg p-4">
-          <p className="text-amber-800 text-sm">
-            <strong>Select more products:</strong> Choose at least one more product from a different store to start comparing prices.
+        <div className="bg-notion-yellow-light border border-notion-yellow border-opacity-20 rounded-notion-lg p-notion-lg">
+          <p className="text-notion-body text-notion-yellow">
+            Select at least one more product from a different store to start comparing prices.
           </p>
         </div>
       )}
 
       {/* Store Results */}
       {storeEntries.map(([storeId, storeResult]) => (
-        <div key={storeId} className="space-y-4">
+        <div key={storeId} className="space-y-notion-lg">
           {/* Store Header */}
-          <div className="flex items-center gap-3 pb-2 border-b border-gray-200">
-            <Store className="h-5 w-5 text-gray-600" />
-            <h3 className="text-xl font-semibold text-gray-900">
-              {storeResult.storeName}
-            </h3>
-            <span className="text-sm text-gray-500">
-              ({storeResult.products.length} products found)
-            </span>
+          <div className="flex items-center gap-notion-md pb-notion-md border-b border-notion-200">
+            <div className="w-6 h-6 bg-notion-100 rounded flex items-center justify-center">
+              <Store className="h-4 w-4 text-notion-600" />
+            </div>
+            <div>
+              <h3 className="text-notion-subheading">
+                {storeResult.storeName}
+              </h3>
+              <span className="text-notion-muted">
+                {storeResult.products.length} products found
+              </span>
+            </div>
           </div>
 
           {/* Error State */}
           {storeResult.error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-              <div className="flex items-center gap-2">
-                <AlertTriangle className="h-5 w-5 text-red-600" />
-                <p className="text-red-800 text-sm">
-                  <strong>Error loading from {storeResult.storeName}:</strong> {storeResult.error}
-                </p>
+            <div className="bg-notion-red-light border border-notion-red border-opacity-20 rounded-notion-lg p-notion-lg">
+              <div className="flex items-start gap-notion-md">
+                <AlertTriangle className="h-5 w-5 text-notion-red flex-shrink-0 mt-0.5" />
+                <div>
+                  <p className="text-notion-body text-notion-red font-medium">
+                    Error loading from {storeResult.storeName}
+                  </p>
+                  <p className="text-notion-caption text-notion-red mt-1">
+                    {storeResult.error}
+                  </p>
+                </div>
               </div>
             </div>
           )}
 
           {/* Products Grid */}
           {storeResult.products.length > 0 ? (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
+            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-notion-lg">
               {storeResult.products.map((product) => (
                 <ProductCard
                   key={`${storeId}-${product.id}`}
@@ -111,8 +126,8 @@ const SearchResults: React.FC<SearchResultsProps> = ({
               ))}
             </div>
           ) : !storeResult.error && (
-            <div className="text-center py-8 text-gray-500">
-              <p>No products found in {storeResult.storeName}</p>
+            <div className="text-center py-notion-2xl">
+              <p className="text-notion-caption">No products found in {storeResult.storeName}</p>
             </div>
           )}
         </div>

@@ -4,24 +4,107 @@
 
 @layer base {
   html {
-    font-family: 'Inter', system-ui, sans-serif;
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Helvetica, 'Apple Color Emoji', Arial, sans-serif, 'Segoe UI Emoji', 'Segoe UI Symbol';
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
   }
   
   body {
-    @apply bg-gray-50 text-gray-900;
+    @apply bg-white text-notion-800 font-notion;
+    font-size: 16px;
+    line-height: 1.5;
+  }
+
+  * {
+    @apply border-notion-200;
   }
 }
 
 @layer components {
-  .btn-primary {
-    @apply bg-primary-600 hover:bg-primary-700 text-white font-medium py-2 px-4 rounded-lg transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  /* Notion-style buttons */
+  .btn-notion-primary {
+    @apply bg-notion-blue hover:bg-opacity-90 text-white font-medium py-notion-sm px-notion-lg rounded-notion transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-notion-blue focus:ring-opacity-20 text-notion-sm;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
   }
   
-  .btn-secondary {
-    @apply bg-white hover:bg-gray-50 text-gray-700 font-medium py-2 px-4 rounded-lg border border-gray-300 transition-colors duration-200 focus:outline-none focus:ring-2 focus:ring-primary-500 focus:ring-offset-2;
+  .btn-notion-secondary {
+    @apply bg-white hover:bg-notion-50 text-notion-700 font-medium py-notion-sm px-notion-lg rounded-notion border border-notion-200 transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-notion-blue focus:ring-opacity-20 text-notion-sm;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  .btn-notion-ghost {
+    @apply bg-transparent hover:bg-notion-100 text-notion-600 font-medium py-notion-sm px-notion-lg rounded-notion transition-all duration-150 focus:outline-none focus:ring-2 focus:ring-notion-blue focus:ring-opacity-20 text-notion-sm;
   }
   
-  .input-primary {
-    @apply w-full px-4 py-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-primary-500 focus:border-primary-500 outline-none transition-colors duration-200;
+  /* Notion-style inputs */
+  .input-notion {
+    @apply w-full px-notion-md py-notion-sm border border-notion-200 rounded-notion focus:ring-2 focus:ring-notion-blue focus:ring-opacity-20 focus:border-notion-blue outline-none transition-all duration-150 text-notion-base bg-white placeholder-notion-400;
+    box-shadow: 0 1px 2px rgba(0, 0, 0, 0.05);
+  }
+
+  /* Notion-style cards */
+  .card-notion {
+    @apply bg-white rounded-notion-lg border border-notion-200 transition-all duration-150;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+  }
+
+  .card-notion:hover {
+    @apply shadow-notion-hover;
+  }
+
+  .card-notion-selected {
+    @apply border-notion-blue bg-notion-blue-light;
+  }
+
+  /* Notion-style text styles */
+  .text-notion-title {
+    @apply text-notion-3xl font-semibold text-notion-900 tracking-tight;
+  }
+
+  .text-notion-heading {
+    @apply text-notion-2xl font-semibold text-notion-900;
+  }
+
+  .text-notion-subheading {
+    @apply text-notion-xl font-medium text-notion-800;
+  }
+
+  .text-notion-body {
+    @apply text-notion-base text-notion-700;
+  }
+
+  .text-notion-caption {
+    @apply text-notion-sm text-notion-500;
+  }
+
+  .text-notion-muted {
+    @apply text-notion-xs text-notion-400;
+  }
+
+  /* Notion-style status badges */
+  .badge-notion-success {
+    @apply bg-notion-green-light text-notion-green px-notion-sm py-1 rounded text-notion-xs font-medium;
+  }
+
+  .badge-notion-error {
+    @apply bg-notion-red-light text-notion-red px-notion-sm py-1 rounded text-notion-xs font-medium;
+  }
+
+  .badge-notion-warning {
+    @apply bg-notion-yellow-light text-notion-yellow px-notion-sm py-1 rounded text-notion-xs font-medium;
+  }
+
+  .badge-notion-neutral {
+    @apply bg-notion-100 text-notion-600 px-notion-sm py-1 rounded text-notion-xs font-medium;
+  }
+
+  /* Notion-style dividers */
+  .divider-notion {
+    @apply border-t border-notion-200 my-notion-xl;
+  }
+
+  /* Notion-style focus states */
+  .focus-notion {
+    @apply focus:outline-none focus:ring-2 focus:ring-notion-blue focus:ring-opacity-20;
   }
 }

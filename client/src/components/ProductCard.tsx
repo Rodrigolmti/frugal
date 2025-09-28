@@ -25,12 +25,12 @@ const ProductCard: React.FC<ProductCardProps> = ({
   const hasDiscount = product.originalPrice && product.originalPrice > product.price;
 
   return (
-    <div className={`bg-white rounded-lg border-2 transition-all duration-200 hover:shadow-md ${
-      isSelected ? 'border-primary-500 shadow-md' : 'border-gray-200'
+    <div className={`card-notion transition-all duration-150 cursor-pointer ${
+      isSelected ? 'card-notion-selected' : 'hover:shadow-notion-md'
     }`}>
-      <div className="p-4">
+      <div className="p-notion-lg">
         {/* Product Image */}
-        <div className="aspect-square w-full mb-3 bg-gray-100 rounded-lg overflow-hidden">
+        <div className="aspect-square w-full mb-notion-md bg-notion-100 rounded-notion overflow-hidden">
           {product.image ? (
             <img
               src={product.image}
@@ -42,52 +42,51 @@ const ProductCard: React.FC<ProductCardProps> = ({
               }}
             />
           ) : (
-            <div className="w-full h-full flex items-center justify-center text-gray-400">
-              <span className="text-sm">No image</span>
+            <div className="w-full h-full flex items-center justify-center text-notion-400">
+              <span className="text-notion-muted">No image</span>
             </div>
           )}
         </div>
 
         {/* Product Info */}
-        <div className="space-y-2">
-          <h3 className="font-medium text-gray-900 line-clamp-2 text-sm leading-tight">
+        <div className="space-y-notion-sm">
+          <h3 className="text-notion-body font-medium text-notion-900 line-clamp-2 leading-tight">
             {product.name}
           </h3>
 
           {/* Price */}
-          <div className="flex items-center gap-2">
-            <span className="text-lg font-bold text-gray-900">
+          <div className="flex items-baseline gap-notion-sm">
+            <span className="text-notion-xl font-semibold text-notion-900">
               {formatPrice(product.price)}
             </span>
             {hasDiscount && (
-              <span className="text-sm text-gray-500 line-through">
+              <span className="text-notion-caption text-notion-400 line-through">
                 {formatPrice(product.originalPrice!)}
               </span>
             )}
             {product.unit && (
-              <span className="text-xs text-gray-500">{product.unit}</span>
+              <span className="text-notion-muted">{product.unit}</span>
             )}
           </div>
 
-          {/* Stock Status */}
-          {!product.inStock && (
-            <div className="flex items-center gap-1 text-red-600">
-              <AlertCircle className="h-4 w-4" />
-              <span className="text-sm">Out of Stock</span>
-            </div>
-          )}
-
-          {/* Store Badge */}
+          {/* Store and Stock Status */}
           <div className="flex items-center justify-between">
-            <span className="inline-block bg-gray-100 text-gray-700 text-xs px-2 py-1 rounded">
+            <span className="badge-notion-neutral">
               {product.store}
             </span>
+            {!product.inStock && (
+              <div className="flex items-center gap-1">
+                <AlertCircle className="h-3 w-3 text-notion-red" />
+                <span className="text-notion-muted">Out of Stock</span>
+              </div>
+            )}
             {product.url && (
               <a
                 href={product.url}
                 target="_blank"
                 rel="noopener noreferrer"
-                className="text-primary-600 hover:text-primary-700"
+                className="text-notion-blue hover:text-opacity-80 transition-colors"
+                onClick={(e) => e.stopPropagation()}
               >
                 <ExternalLink className="h-4 w-4" />
               </a>
@@ -97,17 +96,20 @@ const ProductCard: React.FC<ProductCardProps> = ({
           {/* Select Button */}
           {showSelectButton && onSelect && (
             <button
-              onClick={() => onSelect(product)}
+              onClick={(e) => {
+                e.stopPropagation();
+                onSelect(product);
+              }}
               disabled={!product.inStock}
-              className={`w-full mt-3 py-2 px-3 rounded-lg text-sm font-medium transition-colors duration-200 ${
+              className={`w-full mt-notion-md py-notion-sm px-notion-md rounded-notion text-notion-sm font-medium transition-all duration-150 ${
                 isSelected
-                  ? 'bg-primary-600 text-white'
+                  ? 'bg-notion-blue text-white'
                   : product.inStock
-                  ? 'bg-gray-100 hover:bg-gray-200 text-gray-700'
-                  : 'bg-gray-50 text-gray-400 cursor-not-allowed'
+                  ? 'bg-notion-100 hover:bg-notion-200 text-notion-700'
+                  : 'bg-notion-50 text-notion-400 cursor-not-allowed'
               }`}
             >
-              {isSelected ? 'Selected' : product.inStock ? 'Select for Comparison' : 'Out of Stock'}
+              {isSelected ? 'Selected' : product.inStock ? 'Select' : 'Out of Stock'}
             </button>
           )}
         </div>

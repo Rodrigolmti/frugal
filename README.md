@@ -147,8 +147,6 @@ NODE_ENV=development
 - [ ] Add more grocery stores (Metro, Loblaws, etc.)
 - [ ] Product image optimization and caching
 - [ ] Price history tracking
-- [ ] User accounts and shopping lists
-- [ ] Mobile app
 - [ ] Price alerts and notifications
 - [ ] Store location integration
 
