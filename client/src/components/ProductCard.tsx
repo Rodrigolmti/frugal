@@ -1,6 +1,6 @@
-import React from 'react';
+import { FC } from 'react';
 import { Product } from '../types';
-import { ExternalLink, AlertCircle } from 'lucide-react';
+import { ExternalLink, AlertCircle, Tag, Package, Scale } from 'lucide-react';
 
 interface ProductCardProps {
   product: Product;
@@ -9,7 +9,7 @@ interface ProductCardProps {
   showSelectButton?: boolean;
 }
 
-const ProductCard: React.FC<ProductCardProps> = ({ 
+const ProductCard: FC<ProductCardProps> = ({ 
   product, 
   onSelect, 
   isSelected = false,
@@ -68,6 +68,34 @@ const ProductCard: React.FC<ProductCardProps> = ({
               <span className="text-notion-muted">{product.unit}</span>
             )}
           </div>
+
+          {/* Product Details */}
+          {(product.size || product.weight || product.offer) && (
+            <div className="space-y-notion-xs">
+              {product.offer && (
+                <div className="flex items-center gap-notion-xs">
+                  <Tag className="h-3 w-3 text-notion-orange" />
+                  <span className="text-notion-xs text-notion-orange font-medium">
+                    {product.offer}
+                  </span>
+                </div>
+              )}
+              <div className="flex items-center gap-notion-md text-notion-xs text-notion-500">
+                {product.size && (
+                  <div className="flex items-center gap-notion-xs">
+                    <Package className="h-3 w-3" />
+                    <span>{product.size}</span>
+                  </div>
+                )}
+                {product.weight && (
+                  <div className="flex items-center gap-notion-xs">
+                    <Scale className="h-3 w-3" />
+                    <span>{product.weight}</span>
+                  </div>
+                )}
+              </div>
+            </div>
+          )}
 
           {/* Store and Stock Status */}
           <div className="flex items-center justify-between">

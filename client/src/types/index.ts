@@ -9,6 +9,10 @@ export interface Product {
   inStock: boolean;
   unit: string;
   description: string;
+  size?: string;
+  weight?: string;
+  offer?: string;
+  brand?: string;
 }
 
 export interface StoreSearchResult {

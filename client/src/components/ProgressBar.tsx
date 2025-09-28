@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 import { StoreProgress } from '../types';
 import { CheckCircle, AlertCircle, Loader2, Clock } from 'lucide-react';
 
@@ -7,7 +7,7 @@ interface ProgressBarProps {
   className?: string;
 }
 
-const ProgressBar: React.FC<ProgressBarProps> = ({ store, className = '' }) => {
+const ProgressBar: FC<ProgressBarProps> = ({ store, className = '' }) => {
   const getStatusIcon = () => {
     switch (store.status) {
       case 'pending':
@@ -67,22 +67,24 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ store, className = '' }) => {
   };
 
   return (
-    <div className={`space-y-notion-sm ${className}`}>
-      {/* Store Header */}
+    <div className={`space-y-notion-xs ${className}`}>
+      {/* Compact Store Header */}
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-notion-sm">
+        <div className="flex items-center gap-notion-xs">
           {getStatusIcon()}
-          <span className="text-notion-body font-medium text-notion-900">
+          <span className="text-notion-sm font-medium text-notion-900">
             {store.name}
           </span>
         </div>
-        <span className={`text-notion-caption ${getStatusColor()}`}>
-          {getStatusText()}
-        </span>
+        {store.status === 'loading' && (
+          <span className="text-notion-xs text-notion-400">
+            {store.progress}%
+          </span>
+        )}
       </div>
 
-      {/* Progress Bar */}
-      <div className="w-full bg-notion-100 rounded-full h-2 overflow-hidden">
+      {/* Compact Progress Bar */}
+      <div className="w-full bg-notion-100 rounded-full h-1.5 overflow-hidden">
         <div
           className={`h-full transition-all duration-300 ease-out ${getProgressBarColor()}`}
           style={{ width: `${store.progress}%` }}
@@ -94,14 +96,12 @@ const ProgressBar: React.FC<ProgressBarProps> = ({ store, className = '' }) => {
         </div>
       </div>
 
-      {/* Progress Percentage (only show during loading) */}
-      {store.status === 'loading' && (
-        <div className="text-right">
-          <span className="text-notion-muted">
-            {store.progress}%
-          </span>
-        </div>
-      )}
+      {/* Status Text */}
+      <div className="text-right">
+        <span className={`text-notion-xs ${getStatusColor()}`}>
+          {getStatusText()}
+        </span>
+      </div>
     </div>
   );
 };

@@ -1,12 +1,13 @@
-import React, { useState, useCallback } from 'react';
+import { useState, useCallback } from 'react';
 import SearchBar from './components/SearchBar';
 import SearchResults from './components/SearchResults';
 import ProgressiveSearchResults from './components/ProgressiveSearchResults';
 import PriceComparison from './components/PriceComparison';
+import StoreList from './components/StoreList';
 import { searchProducts } from './services/api';
 import { streamingSearchService } from './services/streamingApi';
 import { SearchResults as SearchResultsType, Product, ComparisonProduct, StreamingSearchState } from './types';
-import { Search, AlertCircle } from 'lucide-react';
+import { AlertCircle } from 'lucide-react';
 
 type AppState = 'search' | 'results' | 'comparison';
 
@@ -112,14 +113,11 @@ function App() {
 
   return (
     <div className="min-h-screen bg-white flex flex-col">
-      {/* Notion-style Header */}
-      <header className="border-b border-notion-200 bg-white">
+      {/* Sticky Header */}
+      <header className="sticky top-0 z-50 border-b border-notion-200 bg-white/95 backdrop-blur-sm">
         <div className="max-w-5xl mx-auto px-notion-2xl py-notion-lg">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-notion-md">
-              <div className="w-8 h-8 bg-notion-100 rounded-notion flex items-center justify-center">
-                <Search className="h-4 w-4 text-notion-600" />
-              </div>
+            <div className="flex-1 flex justify-center">
               <h1 className="text-notion-heading">
                 Grocery Price Comparison
               </h1>
@@ -127,7 +125,7 @@ function App() {
             {state !== 'search' && (
               <button
                 onClick={handleBackToSearch}
-                className="btn-notion-ghost"
+                className="btn-notion-ghost absolute right-notion-2xl"
               >
                 New Search
               </button>
@@ -199,7 +197,7 @@ function App() {
                 </div>
               </div>
               
-              <div className="space-y-notion-lg">
+              <div className="space-y-notion-3xl">
                 <div className="flex flex-col sm:flex-row gap-notion-xl justify-center items-center">
                   <div className="flex items-center gap-notion-md">
                     <div className="w-6 h-6 bg-notion-100 text-notion-600 rounded-full flex items-center justify-center text-notion-xs font-medium">1</div>
@@ -216,6 +214,9 @@ function App() {
                     <span className="text-notion-caption">Save money</span>
                   </div>
                 </div>
+                
+                {/* Store List */}
+                <StoreList />
               </div>
             </div>
           </div>

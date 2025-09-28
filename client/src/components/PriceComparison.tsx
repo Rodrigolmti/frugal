@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 import { ComparisonProduct } from '../types';
 import { ArrowLeft, TrendingDown, TrendingUp, X, ExternalLink, Minus } from 'lucide-react';
 
@@ -8,7 +8,7 @@ interface PriceComparisonProps {
   onRemoveProduct: (storeId: string, productId: string) => void;
 }
 
-const PriceComparison: React.FC<PriceComparisonProps> = ({
+const PriceComparison: FC<PriceComparisonProps> = ({
   selectedProducts,
   onBack,
   onRemoveProduct
@@ -98,7 +98,9 @@ const PriceComparison: React.FC<PriceComparisonProps> = ({
             const PriceIcon = priceIndicator.icon;
 
             return (
-              <div key={`${storeId}-${product.id}`} className="p-notion-2xl">
+              <div key={`${storeId}-${product.id}`} className={`p-notion-2xl ${
+                product.price === lowestPrice ? 'bg-green-50 border-l-4 border-green-500' : ''
+              }`}>
                 <div className="flex items-start gap-notion-lg">
                   {/* Rank */}
                   <div className="flex-shrink-0 w-8 h-8 bg-notion-100 rounded-full flex items-center justify-center text-notion-sm font-medium text-notion-600">

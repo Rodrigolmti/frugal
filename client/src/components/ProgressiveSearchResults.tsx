@@ -1,4 +1,4 @@
-import React from 'react';
+import { FC } from 'react';
 import { StreamingSearchState, Product, ComparisonProduct } from '../types';
 import ProductCard from './ProductCard';
 import ProgressBar from './ProgressBar';
@@ -11,7 +11,7 @@ interface ProgressiveSearchResultsProps {
   onCompare: () => void;
 }
 
-const ProgressiveSearchResults: React.FC<ProgressiveSearchResultsProps> = ({
+const ProgressiveSearchResults: FC<ProgressiveSearchResultsProps> = ({
   searchState,
   selectedProducts,
   onProductSelect,
@@ -53,19 +53,19 @@ const ProgressiveSearchResults: React.FC<ProgressiveSearchResultsProps> = ({
         )}
       </div>
 
-      {/* Overall Progress Section */}
+      {/* Compact Progress Section */}
       {!searchState.isComplete && (
-        <div className="card-notion p-notion-2xl">
-          <div className="flex items-center gap-notion-md mb-notion-lg">
-            <div className="w-6 h-6 bg-notion-100 rounded flex items-center justify-center">
-              <Store className="h-4 w-4 text-notion-600" />
+        <div className="card-notion p-notion-lg">
+          <div className="flex items-center gap-notion-md mb-notion-md">
+            <div className="w-5 h-5 bg-notion-100 rounded flex items-center justify-center">
+              <Store className="h-3 w-3 text-notion-600" />
             </div>
-            <h3 className="text-notion-subheading">
+            <h3 className="text-notion-body font-medium">
               Searching Stores
             </h3>
           </div>
           
-          <div className="space-y-notion-lg">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-notion-md">
             {storeEntries.map(([storeId, store]) => (
               <ProgressBar key={storeId} store={store} />
             ))}
@@ -115,17 +115,17 @@ const ProgressiveSearchResults: React.FC<ProgressiveSearchResultsProps> = ({
         }
 
         return (
-          <div key={storeId} className="space-y-notion-lg">
-            {/* Store Header */}
-            <div className="flex items-center gap-notion-md pb-notion-md border-b border-notion-200">
-              <div className="w-6 h-6 bg-notion-100 rounded flex items-center justify-center">
-                <Store className="h-4 w-4 text-notion-600" />
+          <div key={storeId} className="space-y-notion-md">
+            {/* Compact Store Header */}
+            <div className="flex items-center gap-notion-sm pb-notion-sm border-b border-notion-200">
+              <div className="w-5 h-5 bg-notion-100 rounded flex items-center justify-center">
+                <Store className="h-3 w-3 text-notion-600" />
               </div>
               <div>
-                <h3 className="text-notion-subheading">
+                <h3 className="text-notion-body font-medium">
                   {store.name}
                 </h3>
-                <span className="text-notion-muted">
+                <span className="text-notion-xs text-notion-500">
                   {store.status === 'error' 
                     ? 'Search failed' 
                     : `${store.products?.length || 0} products found`
