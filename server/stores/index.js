@@ -1,10 +1,12 @@
 const RealCanadianSuperstore = require('./realCanadianSuperstore');
 const Safeway = require('./safeway');
+const NoFrills = require('./noFrills');
 
 // Store registry - add new stores here
 const stores = {
   'real-canadian-superstore': new RealCanadianSuperstore(),
   'safeway': new Safeway(),
+  'no-frills': new NoFrills(),
   // Add more stores here as they're implemented
   // 'metro': new Metro(),
   // 'loblaws': new Loblaws(),
