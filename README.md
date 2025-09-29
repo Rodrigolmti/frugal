@@ -2,6 +2,8 @@
 
 A modern web application that helps Canadian families find the best grocery prices across major Canadian retail chains. Search for any product and compare prices in real-time to make smarter shopping decisions and save money.
 
+![Comparison]([image.png](https://github.com/Rodrigolmti/frugal/blob/main/screenshots/comparison.png))
+
 ## 🏪 Supported Canadian Stores
 
 - **Real Canadian Superstore** - Loblaws' flagship discount chain
