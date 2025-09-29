@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { ComparisonProduct } from '../types';
+import { ComparisonProduct } from '../../types';
 import { ArrowLeft, TrendingDown, TrendingUp, X, ExternalLink, Minus } from 'lucide-react';
 
 interface PriceComparisonProps {

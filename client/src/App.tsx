@@ -1,12 +1,12 @@
 import { useState, useCallback } from 'react';
-import SearchBar from './components/SearchBar';
-import SearchResults from './components/SearchResults';
-import ProgressiveSearchResults from './components/ProgressiveSearchResults';
-import PriceComparison from './components/PriceComparison';
-import StoreList from './components/StoreList';
-import { searchProducts } from './services/api';
+import { 
+  SearchBar, 
+  ProgressiveSearchResults, 
+  PriceComparison, 
+  StoreList 
+} from './components';
 import { streamingSearchService } from './services/streamingApi';
-import { SearchResults as SearchResultsType, Product, ComparisonProduct, StreamingSearchState } from './types';
+import { Product, ComparisonProduct, StreamingSearchState } from './types';
 import { AlertCircle } from 'lucide-react';
 
 type AppState = 'search' | 'results' | 'comparison';
@@ -15,12 +15,10 @@ function App() {
   const [state, setState] = useState<AppState>('search');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
-  const [searchResults, setSearchResults] = useState<SearchResultsType | null>(null);
   const [streamingSearchState, setStreamingSearchState] = useState<StreamingSearchState | null>(null);
   const [selectedProducts, setSelectedProducts] = useState<ComparisonProduct[]>([]);
-  const [useStreaming, setUseStreaming] = useState(true); // Toggle for streaming vs traditional search
 
-  const handleStreamingSearch = useCallback((searchTerm: string) => {
+  const handleSearch = useCallback((searchTerm: string) => {
     setLoading(true);
     setError(null);
     setStreamingSearchState(null);
@@ -41,31 +39,6 @@ function App() {
       }
     );
   }, []);
-
-  const handleTraditionalSearch = async (searchTerm: string) => {
-    setLoading(true);
-    setError(null);
-    
-    try {
-      const results = await searchProducts(searchTerm);
-      setSearchResults(results);
-      setSelectedProducts([]); // Reset selections on new search
-      setState('results');
-    } catch (err) {
-      setError(err instanceof Error ? err.message : 'Search failed. Please try again.');
-      console.error('Search error:', err);
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  const handleSearch = useCallback((searchTerm: string) => {
-    if (useStreaming) {
-      handleStreamingSearch(searchTerm);
-    } else {
-      handleTraditionalSearch(searchTerm);
-    }
-  }, [useStreaming, handleStreamingSearch]);
 
   const handleProductSelect = (storeId: string, product: Product) => {
     setSelectedProducts(prev => {
@@ -96,7 +69,6 @@ function App() {
 
   const handleBackToSearch = () => {
     setState('search');
-    setSearchResults(null);
     setStreamingSearchState(null);
     setSelectedProducts([]);
     setError(null);
@@ -118,9 +90,11 @@ function App() {
         <div className="max-w-5xl mx-auto px-notion-2xl py-notion-lg">
           <div className="flex items-center justify-between">
             <div className="flex-1 flex justify-center">
-              <h1 className="text-notion-heading">
-                Grocery Price Comparison
-              </h1>
+              <div className="flex items-center gap-notion-sm">
+                <h1 className="text-notion-heading">
+                  Grocery Price Comparison
+                </h1>
+              </div>
             </div>
             {state !== 'search' && (
               <button
@@ -157,44 +131,19 @@ function App() {
         {state === 'search' && (
           <div className="min-h-[calc(100vh-300px)] flex flex-col justify-center">
             <div className="text-center space-y-notion-3xl max-w-3xl mx-auto">
+              
               <div className="space-y-notion-lg">
                 <h2 className="text-notion-title">
                   Find the best grocery prices
                 </h2>
                 <p className="text-notion-body text-notion-500 max-w-2xl mx-auto">
-                  Search for any grocery item and compare prices across multiple stores. 
-                  Make smarter shopping decisions and save money.
+                  Compare prices across multiple grocery stores to find the best deals. 
+                  Make informed shopping decisions and save money on your everyday essentials.
                 </p>
               </div>
               
               <div className="flex justify-center">
                 <SearchBar onSearch={handleSearch} loading={loading} />
-              </div>
-              
-              {/* Search Mode Toggle */}
-              <div className="flex justify-center">
-                <div className="flex items-center gap-notion-md bg-notion-50 rounded-notion-lg p-notion-sm">
-                  <button
-                    onClick={() => setUseStreaming(true)}
-                    className={`px-notion-md py-notion-sm rounded-notion text-notion-sm font-medium transition-all duration-150 ${
-                      useStreaming 
-                        ? 'bg-white text-notion-900 shadow-notion' 
-                        : 'text-notion-500 hover:text-notion-700'
-                    }`}
-                  >
-                    Progressive Search
-                  </button>
-                  <button
-                    onClick={() => setUseStreaming(false)}
-                    className={`px-notion-md py-notion-sm rounded-notion text-notion-sm font-medium transition-all duration-150 ${
-                      !useStreaming 
-                        ? 'bg-white text-notion-900 shadow-notion' 
-                        : 'text-notion-500 hover:text-notion-700'
-                    }`}
-                  >
-                    Traditional Search
-                  </button>
-                </div>
               </div>
               
               <div className="space-y-notion-3xl">
@@ -223,24 +172,13 @@ function App() {
         )}
 
         {/* Results State */}
-        {state === 'results' && (
-          <>
-            {useStreaming && streamingSearchState ? (
-              <ProgressiveSearchResults
-                searchState={streamingSearchState}
-                selectedProducts={selectedProducts}
-                onProductSelect={handleProductSelect}
-                onCompare={handleCompare}
-              />
-            ) : searchResults ? (
-              <SearchResults
-                results={searchResults}
-                selectedProducts={selectedProducts}
-                onProductSelect={handleProductSelect}
-                onCompare={handleCompare}
-              />
-            ) : null}
-          </>
+        {state === 'results' && streamingSearchState && (
+          <ProgressiveSearchResults
+            searchState={streamingSearchState}
+            selectedProducts={selectedProducts}
+            onProductSelect={handleProductSelect}
+            onCompare={handleCompare}
+          />
         )}
 
         {/* Comparison State */}
@@ -264,9 +202,12 @@ function App() {
       {/* Minimal Footer */}
       <footer className="border-t border-notion-200 bg-notion-50">
         <div className="max-w-5xl mx-auto px-notion-2xl py-notion-xl">
-          <div className="text-center">
+          <div className="text-center space-y-notion-sm">
             <p className="text-notion-muted">
-              Compare grocery prices across multiple stores
+              🛒 Compare grocery prices across multiple stores
+            </p>
+            <p className="text-notion-xs text-notion-400">
+              Helping families make smarter grocery shopping decisions
             </p>
           </div>
         </div>

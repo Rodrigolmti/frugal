@@ -1,8 +1,7 @@
-import { FC } from 'react';
-import { StreamingSearchState, Product, ComparisonProduct } from '../types';
-import ProductCard from './ProductCard';
-import ProgressBar from './ProgressBar';
-import { AlertTriangle, Store, ShoppingBag, CheckCircle } from 'lucide-react';
+import { FC, useState } from 'react';
+import { StreamingSearchState, Product, ComparisonProduct } from '../../types';
+import { ProductCard, ProgressBar } from '../common';
+import { AlertTriangle, Store, ShoppingBag, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 interface ProgressiveSearchResultsProps {
   searchState: StreamingSearchState;
@@ -23,8 +22,25 @@ const ProgressiveSearchResults: FC<ProgressiveSearchResultsProps> = ({
   const hasAnyProducts = completedStores.some(([_, store]) => (store.products?.length || 0) > 0);
   const totalProducts = completedStores.reduce((sum, [_, store]) => sum + (store.products?.length || 0), 0);
 
+  // Track expanded/collapsed state for each store
+  const [expandedStores, setExpandedStores] = useState<Record<string, boolean>>(() => {
+    // Initialize all stores as expanded by default
+    const initialState: Record<string, boolean> = {};
+    storeEntries.forEach(([storeId]) => {
+      initialState[storeId] = true;
+    });
+    return initialState;
+  });
+
   const isProductSelected = (storeId: string, productId: string) => {
     return selectedProducts.some(sp => sp.storeId === storeId && sp.product.id === productId);
+  };
+
+  const toggleStoreExpansion = (storeId: string) => {
+    setExpandedStores(prev => ({
+      ...prev,
+      [storeId]: !prev[storeId]
+    }));
   };
 
   return (
@@ -114,59 +130,78 @@ const ProgressiveSearchResults: FC<ProgressiveSearchResultsProps> = ({
           return null;
         }
 
+        const isExpanded = expandedStores[storeId];
+
         return (
           <div key={storeId} className="space-y-notion-md">
-            {/* Compact Store Header */}
-            <div className="flex items-center gap-notion-sm pb-notion-sm border-b border-notion-200">
-              <div className="w-5 h-5 bg-notion-100 rounded flex items-center justify-center">
-                <Store className="h-3 w-3 text-notion-600" />
-              </div>
-              <div>
-                <h3 className="text-notion-body font-medium">
-                  {store.name}
-                </h3>
-                <span className="text-notion-xs text-notion-500">
-                  {store.status === 'error' 
-                    ? 'Search failed' 
-                    : `${store.products?.length || 0} products found`
-                  }
-                </span>
-              </div>
-            </div>
-
-            {/* Error State */}
-            {store.status === 'error' && (
-              <div className="bg-notion-red-light border border-notion-red border-opacity-20 rounded-notion-lg p-notion-lg">
-                <div className="flex items-start gap-notion-md">
-                  <AlertTriangle className="h-5 w-5 text-notion-red flex-shrink-0 mt-0.5" />
-                  <div>
-                    <p className="text-notion-body text-notion-red font-medium">
-                      Error loading from {store.name}
-                    </p>
-                    <p className="text-notion-caption text-notion-red mt-1">
-                      {store.error}
-                    </p>
-                  </div>
+            {/* Compact Store Header - Now Clickable */}
+            <button
+              onClick={() => toggleStoreExpansion(storeId)}
+              className="w-full flex items-center justify-between gap-notion-sm pb-notion-sm border-b border-notion-200 hover:bg-notion-50 -mx-notion-md px-notion-md py-notion-sm rounded-notion transition-colors duration-150"
+            >
+              <div className="flex items-center gap-notion-sm">
+                <div className="w-5 h-5 bg-notion-100 rounded flex items-center justify-center">
+                  <Store className="h-3 w-3 text-notion-600" />
+                </div>
+                <div className="text-left">
+                  <h3 className="text-notion-body font-medium">
+                    {store.name}
+                  </h3>
+                  <span className="text-notion-xs text-notion-500">
+                    {store.status === 'error' 
+                      ? 'Search failed' 
+                      : `${store.products?.length || 0} products found`
+                    }
+                  </span>
                 </div>
               </div>
-            )}
-
-            {/* Products Grid */}
-            {store.products && store.products.length > 0 ? (
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-notion-lg">
-                {store.products.map((product) => (
-                  <ProductCard
-                    key={`${storeId}-${product.id}`}
-                    product={product}
-                    onSelect={(product) => onProductSelect(storeId, product)}
-                    isSelected={isProductSelected(storeId, product.id)}
-                    showSelectButton={true}
-                  />
-                ))}
+              <div className="flex items-center gap-notion-sm">
+                {isExpanded ? (
+                  <ChevronUp className="h-4 w-4 text-notion-500" />
+                ) : (
+                  <ChevronDown className="h-4 w-4 text-notion-500" />
+                )}
               </div>
-            ) : store.status === 'completed' && (
-              <div className="text-center py-notion-2xl">
-                <p className="text-notion-caption">No products found in {store.name}</p>
+            </button>
+
+            {/* Collapsible Content */}
+            {isExpanded && (
+              <div className="space-y-notion-lg">
+                {/* Error State */}
+                {store.status === 'error' && (
+                  <div className="bg-notion-red-light border border-notion-red border-opacity-20 rounded-notion-lg p-notion-lg">
+                    <div className="flex items-start gap-notion-md">
+                      <AlertTriangle className="h-5 w-5 text-notion-red flex-shrink-0 mt-0.5" />
+                      <div>
+                        <p className="text-notion-body text-notion-red font-medium">
+                          Error loading from {store.name}
+                        </p>
+                        <p className="text-notion-caption text-notion-red mt-1">
+                          {store.error}
+                        </p>
+                      </div>
+                    </div>
+                  </div>
+                )}
+
+                {/* Products Grid */}
+                {store.products && store.products.length > 0 ? (
+                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-notion-lg">
+                    {store.products.map((product) => (
+                      <ProductCard
+                        key={`${storeId}-${product.id}`}
+                        product={product}
+                        onSelect={(product) => onProductSelect(storeId, product)}
+                        isSelected={isProductSelected(storeId, product.id)}
+                        showSelectButton={true}
+                      />
+                    ))}
+                  </div>
+                ) : store.status === 'completed' && (
+                  <div className="text-center py-notion-2xl">
+                    <p className="text-notion-caption">No products found in {store.name}</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

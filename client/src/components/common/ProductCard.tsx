@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { Product } from '../types';
+import { Product } from '../../types';
 import { ExternalLink, AlertCircle, Tag, Package, Scale } from 'lucide-react';
 
 interface ProductCardProps {

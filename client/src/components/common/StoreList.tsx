@@ -1,58 +1,12 @@
 import { FC } from 'react';
 import { Store } from 'lucide-react';
-
-interface StoreInfo {
-  id: string;
-  name: string;
-  displayName: string;
-  logo?: string;
-  color: string;
-}
+import { CANADIAN_STORES } from '../../constants';
 
 interface StoreListProps {
   onStoreSelect?: (storeId: string) => void;
 }
 
 const StoreList: FC<StoreListProps> = ({ onStoreSelect }) => {
-  const stores: StoreInfo[] = [
-    {
-      id: 'real-canadian-superstore',
-      name: 'Real Canadian Superstore',
-      displayName: 'Superstore',
-      color: 'bg-red-500',
-    },
-    {
-      id: 'safeway',
-      name: 'Safeway',
-      displayName: 'Safeway',
-      color: 'bg-green-600',
-    },
-    {
-      id: 'no-frills',
-      name: 'No Frills',
-      displayName: 'No Frills',
-      color: 'bg-yellow-500',
-    },
-    {
-      id: 'sobeys',
-      name: 'Sobeys',
-      displayName: 'Sobeys',
-      color: 'bg-blue-600',
-    },
-    {
-      id: 'saveonfoods',
-      name: 'SaveOnFoods',
-      displayName: 'SaveOnFoods',
-      color: 'bg-green-600',
-    },
-    {
-      id: 'wallmart',
-      name: 'Wallmart',
-      displayName: 'Wallmart',
-      color: 'bg-blue-600',
-    },
-  ];
-
   const handleStoreClick = (storeId: string) => {
     if (onStoreSelect) {
       onStoreSelect(storeId);
@@ -63,15 +17,15 @@ const StoreList: FC<StoreListProps> = ({ onStoreSelect }) => {
     <div className="space-y-notion-lg">
       <div className="text-center">
         <h3 className="text-notion-subheading mb-notion-sm">
-          Supported Stores
+          Supported Canadian Stores
         </h3>
         <p className="text-notion-caption text-notion-500">
-          Compare prices across these popular grocery stores
+          Compare prices across these popular Canadian grocery stores
         </p>
       </div>
       
       <div className="flex flex-wrap justify-center gap-notion-lg">
-        {stores.map((store) => (
+        {CANADIAN_STORES.map((store) => (
           <button
             key={store.id}
             onClick={() => handleStoreClick(store.id)}

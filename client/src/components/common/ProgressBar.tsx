@@ -1,5 +1,5 @@
 import { FC } from 'react';
-import { StoreProgress } from '../types';
+import { StoreProgress } from '../../types';
 import { CheckCircle, AlertCircle, Loader2, Clock } from 'lucide-react';
 
 interface ProgressBarProps {
