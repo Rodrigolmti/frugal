@@ -92,7 +92,7 @@ function App() {
             <div className="flex-1 flex justify-center">
               <div className="flex items-center gap-notion-sm">
                 <h1 className="text-notion-heading">
-                  Grocery Price Comparison
+                  Frugal
                 </h1>
               </div>
             </div>

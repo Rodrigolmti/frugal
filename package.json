@@ -1,7 +1,7 @@
 {
-  "name": "grocery-price-comparison",
+  "name": "frugal",
   "version": "1.0.0",
-  "description": "Compare grocery prices across multiple stores",
+  "description": "Smart grocery price comparison - find the best deals across multiple stores",
   "main": "server/index.js",
   "scripts": {
     "dev": "concurrently \"npm run server:dev\" \"npm run client:dev\"",
