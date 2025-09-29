@@ -278,16 +278,6 @@ CMD ["npm", "start"]
 - **Error Handling**: Graceful fallbacks when stores are unavailable
 - **Caching**: Results are not cached to ensure real-time pricing
 
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch (`git checkout -b feature/amazing-feature`)
-3. Make your changes following the existing code style
-4. Test thoroughly with multiple stores
-5. Commit your changes (`git commit -m 'Add amazing feature'`)
-6. Push to the branch (`git push origin feature/amazing-feature`)
-7. Open a Pull Request
-
 ## 📄 License
 
 MIT License - see [LICENSE](LICENSE) file for details.
