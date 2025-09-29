@@ -136,13 +136,7 @@ class SaveOnFoods extends BaseStore {
       browser = browserSetup.browser;
       const page = browserSetup.page;
 
-      // Test homepage accessibility
-      const homepageAccessible = await this.testHomepageAccess(page);
-      if (!homepageAccessible) {
-        throw new Error('Save On Foods website appears to be inaccessible');
-      }
-
-      // Navigate to search with fallback
+      // Navigate directly to search with built-in fallback
       await this.navigateToSearch(page, searchTerm);
 
       this.log(`📄 Page loaded: "${await page.title()}"`);
@@ -150,43 +144,9 @@ class SaveOnFoods extends BaseStore {
       // Wait for products to load
       await this.waitForProducts(page);
 
-      // Analyze page content if in debug mode
+      // Lightweight debug info
       if (this.debug) {
-        const content = await page.content();
-        this.log(`📊 Page content length: ${content.length}`, 'debug');
-
-        const selectorCounts = await page.evaluate(() => {
-          return {
-            'ProductCardWrapper--6uxd5a': document.querySelectorAll('.ProductCardWrapper--6uxd5a').length,
-            'ProductCardWrapper-testid': document.querySelectorAll('[data-testid*="ProductCardWrapper"]').length,
-            'ProductCardWrapper-class': document.querySelectorAll('[class*="ProductCardWrapper"]').length,
-            'ProductNameTestId': document.querySelectorAll('[data-testid*="ProductNameTestId"]').length,
-            'ProductCardPrice--1sznkcp': document.querySelectorAll('.ProductCardPrice--1sznkcp').length,
-            'ProductAQABrand--9zdrc2': document.querySelectorAll('.ProductAQABrand--9zdrc2').length,
-            'ProductCardImageWrapper--klzjiv': document.querySelectorAll('.ProductCardImageWrapper--klzjiv').length,
-            'ProductCardHiddenLink--v3c62m': document.querySelectorAll('.ProductCardHiddenLink--v3c62m').length,
-            'data-testid-product': document.querySelectorAll('[data-testid*="product"]').length,
-            'any-price': document.querySelectorAll('[class*="price"], [data-testid*="price"]').length
-          };
-        });
-        this.log(`🎯 Selector analysis: ${JSON.stringify(selectorCounts)}`, 'debug');
-        
-        // Get sample HTML structure to understand the actual layout
-        const sampleHTML = await page.evaluate(() => {
-          // Look for any elements that might be product containers
-          const possibleProducts = document.querySelectorAll('[data-testid*="product"], [class*="product"], [class*="Product"]');
-          if (possibleProducts.length > 0) {
-            const sample = possibleProducts[0];
-            return {
-              outerHTML: sample.outerHTML.substring(0, 1000) + '...',
-              className: sample.className,
-              dataTestId: sample.getAttribute('data-testid'),
-              childrenCount: sample.children.length
-            };
-          }
-          return null;
-        });
-        this.log(`🔍 Sample product HTML: ${JSON.stringify(sampleHTML)}`, 'debug');
+        this.log(`📊 Page loaded successfully`, 'debug');
       }
 
       // Extract products using store-specific logic

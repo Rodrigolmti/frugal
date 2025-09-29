@@ -98,17 +98,7 @@ class Safeway extends BaseStore {
       browser = browserSetup.browser;
       const page = browserSetup.page;
 
-      // Test Voilà access first, fallback to main Safeway site
-      let homepageAccessible = await this.testHomepageAccess(page, this.voilaUrl);
-      if (!homepageAccessible) {
-        this.log(`🔄 Trying main Safeway site...`);
-        homepageAccessible = await this.testHomepageAccess(page, this.baseUrl);
-        if (!homepageAccessible) {
-          throw new Error('Neither Voilà nor Safeway sites are accessible');
-        }
-      }
-
-      // Navigate to search with fallback
+      // Navigate directly to search with Voilà URL as fallback
       await this.navigateToSearch(page, searchTerm, this.voilaUrl);
 
       this.log(`📄 Page loaded: "${await page.title()}"`);
@@ -116,20 +106,9 @@ class Safeway extends BaseStore {
       // Wait for products to load
       await this.waitForProducts(page);
 
-      // Analyze page content if in debug mode
+      // Lightweight debug info
       if (this.debug) {
-        const content = await page.content();
-        this.log(`📊 Page content length: ${content.length}`, 'debug');
-
-        const selectorCounts = await page.evaluate(() => {
-          return {
-            'product-tile': document.querySelectorAll('.product-tile').length,
-            'product-item': document.querySelectorAll('.product-item').length,
-            'data-testid-product': document.querySelectorAll('[data-testid*="product"]').length,
-            'any-price': document.querySelectorAll('[class*="price"], [data-testid*="price"]').length
-          };
-        });
-        this.log(`🎯 Selector analysis: ${JSON.stringify(selectorCounts)}`, 'debug');
+        this.log(`📊 Page loaded successfully`, 'debug');
       }
 
       // Extract products using store-specific logic

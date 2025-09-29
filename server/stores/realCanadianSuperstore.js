@@ -60,12 +60,6 @@ class RealCanadianSuperstore extends BaseStore {
       browser = browserSetup.browser;
       const page = browserSetup.page;
 
-      // Test homepage accessibility
-      const homepageAccessible = await this.testHomepageAccess(page);
-      if (!homepageAccessible) {
-        throw new Error('Website appears to be inaccessible');
-      }
-
       // Navigate to search with fallback
       await this.navigateToSearch(page, searchTerm);
 
@@ -74,20 +68,9 @@ class RealCanadianSuperstore extends BaseStore {
       // Wait for products to load
       await this.waitForProducts(page);
 
-      // Analyze page content if in debug mode
+      // Lightweight debug info
       if (this.debug) {
-        const content = await page.content();
-        this.log(`📊 Page content length: ${content.length}`, 'debug');
-
-        const selectorCounts = await page.evaluate(() => {
-          return {
-            'css-yyn1h': document.querySelectorAll('.css-yyn1h').length,
-            'product-tile': document.querySelectorAll('.product-tile').length,
-            'data-testid-product': document.querySelectorAll('[data-testid*="product"]').length,
-            'any-price': document.querySelectorAll('[class*="price"], [data-testid*="price"]').length
-          };
-        });
-        this.log(`🎯 Selector analysis: ${JSON.stringify(selectorCounts)}`, 'debug');
+        this.log(`📊 Page loaded successfully`, 'debug');
       }
 
       // Extract products using store-specific logic

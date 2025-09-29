@@ -148,72 +148,22 @@ class Walmart extends BaseStore {
         'Upgrade-Insecure-Requests': '1',
       });
       
-      // First, try to visit the homepage to establish session
-      this.log('🏠 Visiting homepage first...');
-      await page.goto(this.baseUrl, { 
-        waitUntil: 'networkidle0',
-        timeout: 30000 
-      });
-      
-      // Wait a bit to let any verification complete
-      await new Promise(resolve => setTimeout(resolve, 3000));
-      
+      // Navigate directly to search URL to save time
       const searchUrl = this.getSearchUrl(searchTerm);
       this.log(`Navigating to: ${searchUrl}`);
       
       await page.goto(searchUrl, { 
-        waitUntil: 'networkidle0',
-        timeout: 30000 
+        waitUntil: 'domcontentloaded', // Changed from networkidle0 for faster loading
+        timeout: 20000 // Reduced from 30000
       });
 
-      // Wait longer for products to load and any verification to complete
-      await new Promise(resolve => setTimeout(resolve, 5000));
+      // Reduced wait time for products to load
+      await new Promise(resolve => setTimeout(resolve, 2000)); // Reduced from 5000
       await this.waitForProducts(page);
       
-      // Debug: Check what we found
-      const debug = true;
-      if (debug) {
-        const selectors = this.getSelectors();
-        
-        this.log('🔍 Testing all product selectors...');
-        
-        // Check each product selector and show counts
-        for (const selector of selectors.products) {
-          const count = await page.evaluate((sel) => {
-            return document.querySelectorAll(sel).length;
-          }, selector);
-          
-          this.log(`Selector "${selector}": ${count} elements`);
-          
-          if (count > 0) {
-            // Get sample HTML from first few elements
-            const sampleHtml = await page.evaluate((sel) => {
-              const elements = document.querySelectorAll(sel);
-              const samples = [];
-              for (let i = 0; i < Math.min(2, elements.length); i++) {
-                samples.push({
-                  outerHTML: elements[i].outerHTML.substring(0, 500) + '...',
-                  textContent: elements[i].textContent.substring(0, 200) + '...'
-                });
-              }
-              return samples;
-            }, selector);
-            
-            this.log(`Sample HTML for ${selector}:`, 'debug');
-            console.log(JSON.stringify(sampleHtml, null, 2));
-            break;
-          }
-        }
-        
-        // Get a sample of the page HTML to understand the structure
-        const pageTitle = await page.title();
-        const bodyHTML = await page.evaluate(() => {
-          return document.body.innerHTML.substring(0, 2000) + '...';
-        });
-        
-        this.log(`Page title: ${pageTitle}`);
-        this.log('Sample page HTML:', 'debug');
-        console.log(bodyHTML);
+      // Lightweight debug info
+      if (this.debug) {
+        this.log(`📊 Page loaded successfully`, 'debug');
       }
 
       const products = await this.extractProducts(page, searchTerm);
@@ -233,7 +183,6 @@ class Walmart extends BaseStore {
 
   async extractProducts(page, searchTerm) {
     const selectors = this.getSelectors();
-    const debug = true;
 
     return await page.evaluate((selectors, debug) => {
       const results = [];
@@ -372,7 +321,7 @@ class Walmart extends BaseStore {
       });
       
       return results;
-    }, selectors, debug);
+    }, selectors, this.debug);
   }
 
   async getProductDetails(productId) {

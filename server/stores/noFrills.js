@@ -105,13 +105,7 @@ class NoFrills extends BaseStore {
       browser = browserSetup.browser;
       const page = browserSetup.page;
 
-      // Test homepage accessibility
-      const homepageAccessible = await this.testHomepageAccess(page);
-      if (!homepageAccessible) {
-        throw new Error('No Frills website appears to be inaccessible');
-      }
-
-      // Navigate to search with fallback
+      // Navigate directly to search with built-in fallback
       await this.navigateToSearch(page, searchTerm);
 
       this.log(`📄 Page loaded: "${await page.title()}"`);
@@ -119,21 +113,9 @@ class NoFrills extends BaseStore {
       // Wait for products to load
       await this.waitForProducts(page);
 
-      // Analyze page content if in debug mode
+      // Lightweight debug info
       if (this.debug) {
-        const content = await page.content();
-        this.log(`📊 Page content length: ${content.length}`, 'debug');
-
-        const selectorCounts = await page.evaluate(() => {
-          return {
-            'product-tile': document.querySelectorAll('.product-tile').length,
-            'product-item': document.querySelectorAll('.product-item').length,
-            'data-testid-product': document.querySelectorAll('[data-testid*="product"]').length,
-            'any-price': document.querySelectorAll('[class*="price"], [data-testid*="price"]').length,
-            'chakra-box-group': document.querySelectorAll('.chakra-box[role="group"]').length
-          };
-        });
-        this.log(`🎯 Selector analysis: ${JSON.stringify(selectorCounts)}`, 'debug');
+        this.log(`📊 Page loaded successfully`, 'debug');
       }
 
       // Extract products using store-specific logic

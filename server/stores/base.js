@@ -59,24 +59,35 @@ class BaseStore {
         '--no-sandbox',
         '--disable-setuid-sandbox',
         '--disable-dev-shm-usage',
-        '--disable-accelerated-2d-canvas',
-        '--no-first-run',
-        '--no-zygote',
         '--disable-gpu',
         '--disable-web-security',
-        '--disable-features=VizDisplayCompositor',
         '--disable-background-timer-throttling',
         '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding'
+        '--disable-renderer-backgrounding',
+        '--disable-extensions',
+        '--disable-plugins',
+        '--disable-javascript-harmony-shipping',
+        '--memory-pressure-off'
       ],
-      timeout: 60000
+      timeout: 30000, // Reduced from 60000
+      defaultViewport: { width: 1366, height: 768 } // Smaller viewport for better performance
     });
 
     const page = await browser.newPage();
     
-    // Set user agent and viewport
+    // Optimized user agent and disable unnecessary features
     await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    await page.setViewport({ width: 1920, height: 1080 });
+    
+    // Block heavy resources but allow essential ones for functionality
+    await page.setRequestInterception(true);
+    page.on('request', (req) => {
+      const resourceType = req.resourceType();
+      if (resourceType === 'image' || resourceType === 'font' || resourceType === 'media') {
+        req.abort();
+      } else {
+        req.continue();
+      }
+    });
 
     return { browser, page };
   }
@@ -102,7 +113,7 @@ class BaseStore {
   }
 
   /**
-   * Navigate to search URL with fallback to homepage search
+   * Navigate to search URL with optimized approach
    * @param {Page} page - Puppeteer page instance
    * @param {string} searchTerm - The search term
    * @param {string} fallbackUrl - Fallback URL if direct search fails
@@ -151,10 +162,10 @@ class BaseStore {
     
     for (const selector of searchSelectors) {
       try {
-        await page.waitForSelector(selector, { timeout: 3000 });
+        await page.waitForSelector(selector, { timeout: 2000 }); // Reduced from 3000
         await page.type(selector, searchTerm);
         await page.keyboard.press('Enter');
-        await new Promise(resolve => setTimeout(resolve, 5000));
+        await new Promise(resolve => setTimeout(resolve, 2000)); // Reduced from 5000
         this.log(`✅ Search performed from homepage`);
         return true;
       } catch (e) {
@@ -174,14 +185,19 @@ class BaseStore {
     const selectors = this.getSelectors();
     const productSelectors = selectors.products || [];
     
-    try {
-      await page.waitForSelector(productSelectors.join(','), { timeout: 10000 });
-      this.log(`✅ Products loaded`);
-      return true;
-    } catch (waitError) {
-      this.log(`⚠️ No products found with standard selectors`);
-      return false;
+    // Try each selector individually for faster detection
+    for (const selector of productSelectors.slice(0, 3)) { // Only try first 3 for speed
+      try {
+        await page.waitForSelector(selector, { timeout: 2000 });
+        this.log(`✅ Products loaded with selector: ${selector}`);
+        return true;
+      } catch (e) {
+        continue;
+      }
     }
+    
+    this.log(`⚠️ No products found with standard selectors`);
+    return false;
   }
 
   /**

@@ -12,10 +12,7 @@ const stores = {
   'no-frills': new NoFrills(),
   'sobeys': new Sobeys(),
   'save-on-foods': new SaveOnFoods(),
-  'walmart': new Walmart(),
-  // Add more stores here as they're implemented
-  // 'metro': new Metro(),
-  // 'loblaws': new Loblaws(),
+  // 'walmart': new Walmart(),
 };
 
 /**
