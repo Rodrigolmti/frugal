@@ -1,79 +1,49 @@
-const RealCanadianSuperstore = require('./realCanadianSuperstore');
-const Safeway = require('./safeway');
-const NoFrills = require('./noFrills');
-const Sobeys = require('./sobeys');
-const SaveOnFoods = require('./saveOnFoods');
-const Walmart = require('./walmart');
+const BaseStore = require('./base');
 
-// Store registry - add new stores here
-const stores = {
-  'real-canadian-superstore': new RealCanadianSuperstore(),
-  'safeway': new Safeway(),
-  'no-frills': new NoFrills(),
-  'sobeys': new Sobeys(),
-  'save-on-foods': new SaveOnFoods(),
-  // 'walmart': new Walmart(),
-};
+const configs = [
+  require('./configs/realCanadianSuperstore'),
+  require('./configs/safeway'),
+  require('./configs/noFrills'),
+  require('./configs/sobeys'),
+  require('./configs/saveOnFoods'),
+  require('./configs/walmart'),
+];
 
-/**
- * Get all available stores
- */
+const stores = {};
+for (const config of configs) {
+  stores[config.id] = new BaseStore(config);
+}
+
 function getAllStores() {
   return Object.keys(stores).map(key => ({
     id: key,
     name: stores[key].name,
-    baseUrl: stores[key].baseUrl
+    baseUrl: stores[key].baseUrl,
   }));
 }
 
-/**
- * Get a specific store by ID
- */
 function getStore(storeId) {
   return stores[storeId];
 }
 
-/**
- * Search products across all stores
- */
 async function searchAllStores(searchTerm) {
-  console.log(`🚀 Starting search across all stores for: "${searchTerm}"`);
+  console.log(`Starting search across all stores for: "${searchTerm}"`);
   const results = {};
-  
-  for (const [storeId, store] of Object.entries(stores)) {
+
+  const promises = Object.entries(stores).map(async ([storeId, store]) => {
     try {
-      console.log(`🏪 Searching ${store.name} for: ${searchTerm}`);
       const startTime = Date.now();
       const products = await store.searchProducts(searchTerm);
-      const endTime = Date.now();
-      
-      console.log(`✅ ${store.name} search completed in ${endTime - startTime}ms. Found ${products.length} products.`);
-      
-      results[storeId] = {
-        storeName: store.name,
-        products: products,
-        error: null
-      };
+      console.log(`${store.name} completed in ${Date.now() - startTime}ms. Found ${products.length} products.`);
+      results[storeId] = { storeName: store.name, products, error: null };
     } catch (error) {
-      console.error(`❌ Error searching ${store.name}:`, error.message);
-      results[storeId] = {
-        storeName: store.name,
-        products: [],
-        error: error.message
-      };
+      console.error(`Error searching ${store.name}:`, error.message);
+      results[storeId] = { storeName: store.name, products: [], error: error.message };
     }
-  }
-  
-  console.log(`🏁 Search completed. Results summary:`);
-  Object.entries(results).forEach(([storeId, result]) => {
-    console.log(`   - ${result.storeName}: ${result.products.length} products${result.error ? ` (ERROR: ${result.error})` : ''}`);
   });
-  
+
+  await Promise.all(promises);
   return results;
 }
 
-module.exports = {
-  getAllStores,
-  getStore,
-  searchAllStores
-};
+module.exports = { getAllStores, getStore, searchAllStores };

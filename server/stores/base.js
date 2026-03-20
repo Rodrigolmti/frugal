@@ -1,376 +1,370 @@
-const puppeteer = require('puppeteer');
+const { RawProductSchema, ProductSchema } = require('../schemas/product');
+const browserPool = require('../infra/browserPool');
+const { apiRequest } = require('../infra/apiClient');
+const {
+  getRandomHeaders,
+  getRandomViewport,
+  shouldBlockRequest,
+  randomDelay,
+} = require('../infra/stealth');
 
-/**
- * Base Store Interface
- * All store adapters must implement these methods and can use shared foundation methods
- */
 class BaseStore {
-  constructor(name, baseUrl) {
-    this.name = name;
-    this.baseUrl = baseUrl;
+  constructor(config) {
+    this.config = config;
+    this.name = config.name;
+    this.baseUrl = config.baseUrl;
+    this.id = config.id;
     this.debug = process.env.DEBUG_SCRAPING === 'true';
   }
 
-  /**
-   * Search for products by term - must be implemented by subclasses
-   * @param {string} searchTerm - The product to search for
-   * @returns {Promise<Array>} Array of product objects
-   */
   async searchProducts(searchTerm) {
-    throw new Error('searchProducts method must be implemented');
+    const primary = this.config.strategy;
+    const fallback = primary === 'api' ? 'browser' : null;
+
+    try {
+      return primary === 'api'
+        ? await this.searchViaApi(searchTerm)
+        : await this.searchViaBrowser(searchTerm);
+    } catch (err) {
+      if (fallback && this.config.browser) {
+        this.log(`Primary strategy (${primary}) failed, falling back to ${fallback}: ${err.message}`);
+        return this.searchViaBrowser(searchTerm);
+      }
+      throw err;
+    }
   }
 
-  /**
-   * Get detailed product information - must be implemented by subclasses
-   * @param {string} productId - The product identifier
-   * @returns {Promise<Object>} Detailed product information
-   */
-  async getProductDetails(productId) {
-    throw new Error('getProductDetails method must be implemented');
+  async searchViaApi(searchTerm) {
+    const apiConfig = this.config.api;
+    if (!apiConfig) throw new Error(`No API config for ${this.name}`);
+
+    this.log(`API search for: "${searchTerm}"`);
+    const url = apiConfig.searchUrl(searchTerm);
+    const data = await apiRequest(url, { headers: apiConfig.headers || {} });
+    const rawProducts = apiConfig.parseResponse(data);
+    return this.processProducts(rawProducts);
   }
 
-  /**
-   * Get store-specific selectors - must be implemented by subclasses
-   * @returns {Object} Object containing selector arrays for different elements
-   */
-  getSelectors() {
-    throw new Error('getSelectors method must be implemented');
+  async searchViaBrowser(searchTerm) {
+    let browser;
+    try {
+      this.log(`Browser search for: "${searchTerm}"`);
+      browser = await browserPool.acquire();
+      const page = await browser.newPage();
+
+      try {
+        await this._configurePage(page);
+        await this._navigateToSearch(page, searchTerm);
+        await this._waitForProducts(page);
+        const rawProducts = await this._extractProducts(page);
+        const processed = this.processProducts(rawProducts);
+        this.log(`Found ${processed.length} products`);
+        return processed;
+      } finally {
+        await page.close().catch(() => {});
+      }
+    } catch (error) {
+      this.log(`Error: ${error.message}`, 'error');
+      throw new Error(`Failed to search ${this.name}: ${error.message}`);
+    } finally {
+      if (browser) await browserPool.release(browser);
+    }
   }
 
-  /**
-   * Get store-specific search URL - must be implemented by subclasses
-   * @param {string} searchTerm - The search term
-   * @returns {string} The search URL
-   */
-  getSearchUrl(searchTerm) {
-    throw new Error('getSearchUrl method must be implemented');
-  }
+  async _configurePage(page) {
+    const { userAgent, headers } = getRandomHeaders();
+    const viewport = getRandomViewport();
 
-  /**
-   * Shared browser setup with optimized configuration
-   * @returns {Promise<Browser>} Configured Puppeteer browser instance
-   */
-  async setupBrowser() {
-    this.log('🚀 Launching browser...');
-    
-    const browser = await puppeteer.launch({
-      headless: 'new',
-      args: [
-        '--no-sandbox',
-        '--disable-setuid-sandbox',
-        '--disable-dev-shm-usage',
-        '--disable-gpu',
-        '--disable-web-security',
-        '--disable-background-timer-throttling',
-        '--disable-backgrounding-occluded-windows',
-        '--disable-renderer-backgrounding',
-        '--disable-extensions',
-        '--disable-plugins',
-        '--disable-javascript-harmony-shipping',
-        '--memory-pressure-off'
-      ],
-      timeout: 30000, // Reduced from 60000
-      defaultViewport: { width: 1366, height: 768 } // Smaller viewport for better performance
-    });
+    await page.setUserAgent(userAgent);
+    await page.setViewport(viewport);
+    await page.setExtraHTTPHeaders(headers);
 
-    const page = await browser.newPage();
-    
-    // Optimized user agent and disable unnecessary features
-    await page.setUserAgent('Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36');
-    
-    // Block heavy resources but allow essential ones for functionality
     await page.setRequestInterception(true);
     page.on('request', (req) => {
-      const resourceType = req.resourceType();
-      if (resourceType === 'image' || resourceType === 'font' || resourceType === 'media') {
+      if (shouldBlockRequest(req)) {
         req.abort();
       } else {
         req.continue();
       }
     });
-
-    return { browser, page };
   }
 
-  /**
-   * Test homepage accessibility
-   * @param {Page} page - Puppeteer page instance
-   * @param {string} url - URL to test (defaults to baseUrl)
-   * @returns {Promise<boolean>} Whether the homepage is accessible
-   */
-  async testHomepageAccess(page, url = this.baseUrl) {
-    try {
-      await page.goto(url, { 
-        waitUntil: 'domcontentloaded',
-        timeout: 20000 
-      });
-      this.log(`✅ Homepage accessible: ${url}`);
-      return true;
-    } catch (error) {
-      this.log(`❌ Cannot access homepage: ${error.message}`);
-      return false;
-    }
-  }
+  async _navigateToSearch(page, searchTerm) {
+    const browserConfig = this.config.browser;
+    const searchUrl = browserConfig.searchUrl(searchTerm);
+    const fallbackUrl = browserConfig.fallbackUrl || this.baseUrl;
 
-  /**
-   * Navigate to search URL with optimized approach
-   * @param {Page} page - Puppeteer page instance
-   * @param {string} searchTerm - The search term
-   * @param {string} fallbackUrl - Fallback URL if direct search fails
-   * @returns {Promise<boolean>} Whether navigation was successful
-   */
-  async navigateToSearch(page, searchTerm, fallbackUrl = this.baseUrl) {
-    const searchUrl = this.getSearchUrl(searchTerm);
-    this.log(`🔍 Navigating to search: ${searchUrl}`);
-    
+    this.log(`Navigating to: ${searchUrl}`, 'debug');
+
     try {
-      await page.goto(searchUrl, { 
+      await page.goto(searchUrl, {
         waitUntil: 'domcontentloaded',
-        timeout: 30000 
+        timeout: 30000,
       });
-      
-      // Wait for dynamic content
-      await new Promise(resolve => setTimeout(resolve, 5000));
-      this.log(`✅ Search page loaded`);
-      return true;
-      
+      const delay = browserConfig.waitDelay || { min: 3000, max: 5000 };
+      await randomDelay(delay.min, delay.max);
     } catch (navError) {
-      this.log(`⚠️ Direct search failed, trying homepage search...`);
-      
-      // Fallback to homepage search
-      await page.goto(fallbackUrl, { waitUntil: 'domcontentloaded', timeout: 20000 });
-      
-      return await this.performHomepageSearch(page, searchTerm);
+      this.log(`Direct search failed, trying fallback...`, 'debug');
+      await page.goto(fallbackUrl, {
+        waitUntil: 'domcontentloaded',
+        timeout: 20000,
+      });
+      await this._performHomepageSearch(page, searchTerm);
     }
   }
 
-  /**
-   * Perform search from homepage using search input
-   * @param {Page} page - Puppeteer page instance
-   * @param {string} searchTerm - The search term
-   * @returns {Promise<boolean>} Whether search was successful
-   */
-  async performHomepageSearch(page, searchTerm) {
-    const searchSelectors = [
+  async _performHomepageSearch(page, searchTerm) {
+    const searchInputSelectors = [
       'input[type="search"]',
       'input[name*="search"]',
       'input[placeholder*="search"]',
       '#search',
       '[data-testid*="search"]',
-      '.search-input'
+      '.search-input',
     ];
-    
-    for (const selector of searchSelectors) {
+
+    for (const selector of searchInputSelectors) {
       try {
-        await page.waitForSelector(selector, { timeout: 2000 }); // Reduced from 3000
+        await page.waitForSelector(selector, { timeout: 2000 });
         await page.type(selector, searchTerm);
         await page.keyboard.press('Enter');
-        await new Promise(resolve => setTimeout(resolve, 2000)); // Reduced from 5000
-        this.log(`✅ Search performed from homepage`);
-        return true;
-      } catch (e) {
+        await randomDelay(2000, 4000);
+        return;
+      } catch {
         continue;
       }
     }
-    
     throw new Error('No search input found on homepage');
   }
 
-  /**
-   * Wait for products to load using store-specific selectors
-   * @param {Page} page - Puppeteer page instance
-   * @returns {Promise<boolean>} Whether products were found
-   */
-  async waitForProducts(page) {
-    const selectors = this.getSelectors();
-    const productSelectors = selectors.products || [];
-    
-    // Try each selector individually for faster detection
-    for (const selector of productSelectors.slice(0, 3)) { // Only try first 3 for speed
+  async _waitForProducts(page) {
+    const selectors = this.config.browser.selectors.products || [];
+    for (const selector of selectors.slice(0, 3)) {
       try {
         await page.waitForSelector(selector, { timeout: 2000 });
-        this.log(`✅ Products loaded with selector: ${selector}`);
+        this.log(`Products loaded with selector: ${selector}`, 'debug');
         return true;
-      } catch (e) {
+      } catch {
         continue;
       }
     }
-    
-    this.log(`⚠️ No products found with standard selectors`);
+    this.log('No products found with standard selectors', 'debug');
     return false;
   }
 
-  /**
-   * Extract products from page using store-specific logic
-   * @param {Page} page - Puppeteer page instance
-   * @param {string} searchTerm - The search term for context
-   * @returns {Promise<Array>} Array of raw product data
-   */
-  async extractProducts(page, searchTerm) {
-    // This method should be overridden by subclasses with store-specific extraction logic
-    throw new Error('extractProducts method must be implemented by subclasses');
+  async _extractProducts(page) {
+    const selectors = this.config.browser.selectors;
+    const overrides = this.config.browser.extractOverrides || {};
+
+    return await page.evaluate((selectors, overrides, debug) => {
+      const results = [];
+
+      let productElements = [];
+      for (const selector of selectors.products) {
+        const elements = document.querySelectorAll(selector);
+        if (elements.length > 0) {
+          productElements = elements;
+          break;
+        }
+      }
+
+      function findText(element, selectorList) {
+        for (const sel of selectorList) {
+          const el = element.querySelector(sel);
+          if (el && el.textContent.trim()) return el.textContent.trim();
+        }
+        return '';
+      }
+
+      function findImage(element, selectorList) {
+        for (const sel of selectorList) {
+          const el = element.querySelector(sel);
+          if (el && el.src && !el.src.includes('placeholder')) {
+            return el.src || el.getAttribute('data-src') || el.getAttribute('srcset')?.split(' ')[0] || '';
+          }
+        }
+        return '';
+      }
+
+      function findLink(element, selectorList) {
+        for (const sel of selectorList) {
+          const el = element.querySelector(sel);
+          if (el && (el.href || el.getAttribute('href'))) {
+            return el.href || el.getAttribute('href') || '';
+          }
+        }
+        return '';
+      }
+
+      function findOriginalPrice(element, selectorList) {
+        for (const sel of selectorList) {
+          const el = element.querySelector(sel);
+          if (el && el.textContent.trim()) {
+            const match = el.textContent.trim().match(/\$?(\d+\.?\d*)/);
+            if (match) return parseFloat(match[1]);
+          }
+        }
+        return null;
+      }
+
+      productElements.forEach((element, index) => {
+        try {
+          let name = findText(element, selectors.names);
+
+          // Sobeys: fallback to title attribute
+          if (!name && overrides.nameFallback) {
+            const linkEl = element.querySelector('a[title]');
+            if (linkEl) name = (linkEl.getAttribute('title') || '').trim();
+          }
+
+          // Sobeys: clean truncated names
+          if (name) name = name.replace(/\.\.\.$/g, '').trim();
+
+          // Save-On-Foods: clean name suffix
+          if (overrides.cleanNameSuffix && name) {
+            name = name.replace(new RegExp(overrides.cleanNameSuffix + '$'), '').trim();
+          }
+
+          const brand = findText(element, selectors.brands);
+          if (brand && name && !name.toLowerCase().includes(brand.toLowerCase())) {
+            name = `${brand} ${name}`;
+          }
+
+          const packageSize = findText(element, selectors.packageSizes);
+          let priceText = findText(element, selectors.prices);
+          const image = findImage(element, selectors.images);
+          const link = findLink(element, selectors.links);
+          let originalPrice = findOriginalPrice(element, selectors.originalPrices);
+
+          // Sobeys: additional sale price logic
+          if (!originalPrice && overrides.sobeysSalePrice) {
+            const salePriceEl = element.querySelector('span.text-red200.font-bold.text-body');
+            const regularPriceEl = element.querySelector('span.font-bold.text-body.line-through');
+            if (salePriceEl && regularPriceEl) {
+              const match = regularPriceEl.textContent.trim().match(/\$?(\d+\.?\d*)/);
+              if (match) {
+                originalPrice = parseFloat(match[1]);
+                priceText = salePriceEl.textContent.trim();
+              }
+            }
+          }
+
+          if (name && priceText) {
+            let fullName = name;
+            if (packageSize && !name.includes(packageSize)) {
+              fullName = `${name} ${packageSize}`;
+            }
+
+            results.push({
+              name: fullName,
+              priceText,
+              originalPrice,
+              image,
+              link,
+              brand,
+              packageSize,
+            });
+          }
+        } catch (error) {
+          if (debug) console.warn(`Error processing element ${index}:`, error.message);
+        }
+      });
+
+      return results;
+    }, selectors, overrides, this.debug);
   }
 
-  /**
-   * Process and deduplicate extracted products
-   * @param {Array} rawProducts - Array of raw product data
-   * @returns {Array} Array of processed and normalized products
-   */
   processProducts(rawProducts) {
     const processedProducts = [];
     const seenProducts = new Set();
-    
+
     rawProducts.forEach((rawProduct, index) => {
       try {
-        if (this.debug) {
-          this.log(`📦 Processing product ${index + 1}: "${rawProduct.name}"`);
+        const parsed = RawProductSchema.safeParse(rawProduct);
+        if (!parsed.success) {
+          this.log(`Validation failed for product ${index}: ${parsed.error.message}`, 'debug');
+          return;
+        }
+        const raw = parsed.data;
+
+        let priceMatch = raw.priceText.match(/\$?(\d+\.?\d*)/);
+        let price = priceMatch ? parseFloat(priceMatch[1]) : 0;
+
+        if (raw.priceText.toLowerCase().includes('sale')) {
+          const saleMatch = raw.priceText.match(/sale\$?(\d+\.?\d*)/i);
+          if (saleMatch) price = parseFloat(saleMatch[1]);
         }
 
-        if (rawProduct.name && rawProduct.priceText) {
-          // Extract price from text
-          let priceMatch = rawProduct.priceText.match(/\$?(\d+\.?\d*)/);
-          let price = priceMatch ? parseFloat(priceMatch[1]) : 0;
-          
-          // Handle sale prices
-          if (rawProduct.priceText.toLowerCase().includes('sale')) {
-            const saleMatch = rawProduct.priceText.match(/sale\$?(\d+\.?\d*)/i);
-            if (saleMatch) {
-              price = parseFloat(saleMatch[1]);
-            }
-          }
+        if (price <= 0) return;
 
-          if (price > 0) {
-            // Create unique identifier for deduplication
-            const productId = rawProduct.link ? 
-              rawProduct.link.split('/').pop().split('?')[0] : 
-              `${rawProduct.name.replace(/\s+/g, '-')}-${price}`;
-            const uniqueKey = `${rawProduct.name}-${price}-${productId}`;
-            
-            // Skip duplicates
-            if (seenProducts.has(uniqueKey)) {
-              if (this.debug) {
-                this.log(`   ⚠️ Skipping duplicate: ${rawProduct.name}`);
-              }
-              return;
-            }
-            
-            seenProducts.add(uniqueKey);
-            
-            const product = {
-              id: productId,
-              name: rawProduct.name,
-              price: price,
-              originalPrice: rawProduct.originalPrice || null,
-              image: this.normalizeImageUrl(rawProduct.image),
-              url: this.normalizeProductUrl(rawProduct.link),
-              inStock: true,
-              unit: this.extractUnit(rawProduct.packageSize || rawProduct.priceText),
-              description: rawProduct.packageSize || ''
-            };
+        const productId = raw.link
+          ? raw.link.split('/').pop().split('?')[0]
+          : `${raw.name.replace(/\s+/g, '-')}-${price}`;
+        const uniqueKey = `${raw.name}-${price}-${productId}`;
 
-            processedProducts.push(this.normalizeProduct(product));
-            
-            if (this.debug) {
-              this.log(`   ✅ Added: ${rawProduct.name}`);
-            }
-          }
+        if (seenProducts.has(uniqueKey)) return;
+        seenProducts.add(uniqueKey);
+
+        const product = {
+          id: productId,
+          name: raw.name,
+          price,
+          originalPrice: raw.originalPrice || null,
+          image: this._normalizeImageUrl(raw.image),
+          url: this._normalizeProductUrl(raw.link),
+          store: this.name,
+          inStock: true,
+          unit: this._extractUnit(raw.packageSize || raw.priceText),
+          description: raw.packageSize || '',
+        };
+
+        const validated = ProductSchema.safeParse(product);
+        if (validated.success) {
+          processedProducts.push(validated.data);
+        } else {
+          this.log(`Product validation failed: ${validated.error.message}`, 'debug');
         }
       } catch (error) {
-        this.log(`⚠️ Error processing product ${index}: ${error.message}`);
+        this.log(`Error processing product ${index}: ${error.message}`, 'debug');
       }
     });
 
     return processedProducts;
   }
 
-  /**
-   * Normalize image URL to be absolute
-   * @param {string} imageUrl - Raw image URL
-   * @returns {string} Normalized absolute image URL
-   */
-  normalizeImageUrl(imageUrl) {
+  _normalizeImageUrl(imageUrl) {
+    if (this.config.overrides?.normalizeImageUrl) {
+      return this.config.overrides.normalizeImageUrl(imageUrl);
+    }
     if (!imageUrl) return '';
     if (imageUrl.startsWith('http')) return imageUrl;
     return `${this.baseUrl}${imageUrl}`;
   }
 
-  /**
-   * Normalize product URL to be absolute
-   * @param {string} productUrl - Raw product URL
-   * @returns {string} Normalized absolute product URL
-   */
-  normalizeProductUrl(productUrl) {
+  _normalizeProductUrl(productUrl) {
+    if (this.config.overrides?.normalizeProductUrl) {
+      return this.config.overrides.normalizeProductUrl(productUrl);
+    }
     if (!productUrl) return '';
     if (productUrl.startsWith('http')) return productUrl;
     return `${this.baseUrl}${productUrl}`;
   }
 
-  /**
-   * Extract unit information from text
-   * @param {string} text - Text containing unit information
-   * @returns {string} Extracted unit
-   */
-  extractUnit(text) {
+  _extractUnit(text) {
     if (!text) return '';
     const unitMatch = text.match(/(per\s+\w+|each|\/\w+)/i);
     return unitMatch ? unitMatch[0] : '';
   }
 
-  /**
-   * Safe browser cleanup
-   * @param {Browser} browser - Puppeteer browser instance
-   */
-  async closeBrowser(browser) {
-    if (browser) {
-      try {
-        await browser.close();
-        this.log(`🔒 Browser closed`);
-      } catch (closeError) {
-        this.log(`⚠️ Error closing browser: ${closeError.message}`);
-      }
-    }
-  }
-
-  /**
-   * Streamlined logging with debug levels
-   * @param {string} message - Log message
-   * @param {string} level - Log level (info, debug, error)
-   */
   log(message, level = 'info') {
     const prefix = `[${this.name}]`;
-    
-    switch (level) {
-      case 'error':
-        console.error(`${prefix} ❌ ${message}`);
-        break;
-      case 'debug':
-        if (this.debug) {
-          console.log(`${prefix} 🔍 ${message}`);
-        }
-        break;
-      default:
-        console.log(`${prefix} ${message}`);
+    if (level === 'error') {
+      console.error(`${prefix} ${message}`);
+    } else if (level === 'debug') {
+      if (this.debug) console.log(`${prefix} ${message}`);
+    } else {
+      console.log(`${prefix} ${message}`);
     }
-  }
-
-  /**
-   * Normalize product data to common format
-   * @param {Object} rawProduct - Raw product data from store
-   * @returns {Object} Normalized product object
-   */
-  normalizeProduct(rawProduct) {
-    return {
-      id: rawProduct.id || '',
-      name: rawProduct.name || '',
-      price: rawProduct.price || 0,
-      originalPrice: rawProduct.originalPrice || null,
-      image: rawProduct.image || '',
-      url: rawProduct.url || '',
-      store: this.name,
-      inStock: rawProduct.inStock !== false,
-      unit: rawProduct.unit || '',
-      description: rawProduct.description || ''
-    };
   }
 }
 

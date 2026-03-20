@@ -1,7 +1,7 @@
 import { FC, useState } from 'react';
 import { StreamingSearchState, Product, ComparisonProduct } from '../../types';
 import { ProductCard, ProgressBar } from '../common';
-import { AlertTriangle, Store, ShoppingBag, CheckCircle, ChevronDown, ChevronUp } from 'lucide-react';
+import { AlertTriangle, Store, ShoppingBag, CheckCircle, ChevronDown, ChevronUp, ArrowRight, Info } from 'lucide-react';
 
 interface ProgressiveSearchResultsProps {
   searchState: StreamingSearchState;
@@ -22,9 +22,7 @@ const ProgressiveSearchResults: FC<ProgressiveSearchResultsProps> = ({
   const hasAnyProducts = completedStores.some(([_, store]) => (store.products?.length || 0) > 0);
   const totalProducts = completedStores.reduce((sum, [_, store]) => sum + (store.products?.length || 0), 0);
 
-  // Track expanded/collapsed state for each store
   const [expandedStores, setExpandedStores] = useState<Record<string, boolean>>(() => {
-    // Initialize all stores as expanded by default
     const initialState: Record<string, boolean> = {};
     storeEntries.forEach(([storeId]) => {
       initialState[storeId] = true;
@@ -44,44 +42,25 @@ const ProgressiveSearchResults: FC<ProgressiveSearchResultsProps> = ({
   };
 
   return (
-    <div className="space-y-notion-2xl">
-      {/* Header with Compare Button */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-notion-heading mb-notion-sm">
-            Search Results
-          </h2>
-          <p className="text-notion-caption">
-            {searchState.isComplete ? (
-              <>Found {totalProducts} products for "{searchState.searchTerm}"</>
-            ) : (
-              <>Searching for "{searchState.searchTerm}"...</>
-            )}
-          </p>
-        </div>
-        {selectedCount > 1 && (
-          <button
-            onClick={onCompare}
-            className="btn-notion-primary px-notion-xl py-notion-md"
-          >
-            Compare {selectedCount} Products
-          </button>
-        )}
+    <div className="space-y-notion-xl pb-24">
+      {/* Header */}
+      <div>
+        <h2 className="text-notion-2xl font-bold text-notion-900 mb-notion-xs">
+          {searchState.isComplete ? 'Search Results' : 'Searching...'}
+        </h2>
+        <p className="text-notion-sm text-notion-500">
+          {searchState.isComplete ? (
+            <>{totalProducts} products found for "<span className="font-medium text-notion-700">{searchState.searchTerm}</span>"</>
+          ) : (
+            <>Looking for "<span className="font-medium text-notion-700">{searchState.searchTerm}</span>" across stores...</>
+          )}
+        </p>
       </div>
 
-      {/* Compact Progress Section */}
+      {/* Progress Section */}
       {!searchState.isComplete && (
-        <div className="card-notion p-notion-lg">
-          <div className="flex items-center gap-notion-md mb-notion-md">
-            <div className="w-5 h-5 bg-notion-100 rounded flex items-center justify-center">
-              <Store className="h-3 w-3 text-notion-600" />
-            </div>
-            <h3 className="text-notion-body font-medium">
-              Searching Stores
-            </h3>
-          </div>
-          
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-notion-md">
+        <div className="card-notion p-notion-xl animate-fade-in">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-notion-sm">
             {storeEntries.map(([storeId, store]) => (
               <ProgressBar key={storeId} store={store} />
             ))}
@@ -91,94 +70,96 @@ const ProgressiveSearchResults: FC<ProgressiveSearchResultsProps> = ({
 
       {/* Completion Summary */}
       {searchState.isComplete && (
-        <div className="card-notion p-notion-lg">
-          <div className="flex items-center gap-notion-md">
-            <CheckCircle className="h-5 w-5 text-notion-green" />
-            <div>
-              <p className="text-notion-body font-medium text-notion-900">
-                Search completed
-              </p>
-              <p className="text-notion-caption">
-                Found {totalProducts} products across {completedStores.length} stores
-              </p>
-            </div>
-          </div>
+        <div className="flex items-center gap-notion-md p-notion-lg bg-notion-green-light rounded-notion-xl animate-fade-in">
+          <CheckCircle className="h-5 w-5 text-notion-green flex-shrink-0" />
+          <p className="text-notion-sm text-notion-green font-medium">
+            Found {totalProducts} products across {completedStores.length} stores
+          </p>
         </div>
       )}
 
-      {/* Selection Instructions */}
+      {/* Selection Hints */}
       {hasAnyProducts && selectedCount === 0 && (
-        <div className="bg-notion-blue-light border border-notion-blue border-opacity-20 rounded-notion-lg p-notion-lg">
-          <p className="text-notion-body text-notion-blue">
-            Select products from different stores to compare prices. Choose similar or equivalent items for the best comparison.
+        <div className="flex items-start gap-notion-md p-notion-lg bg-notion-blue-light/50 rounded-notion-xl">
+          <Info className="h-4 w-4 text-notion-blue flex-shrink-0 mt-0.5" />
+          <p className="text-notion-sm text-notion-blue">
+            Select products from different stores to compare prices
           </p>
         </div>
       )}
 
       {selectedCount === 1 && (
-        <div className="bg-notion-yellow-light border border-notion-yellow border-opacity-20 rounded-notion-lg p-notion-lg">
-          <p className="text-notion-body text-notion-yellow">
-            Select at least one more product from a different store to start comparing prices.
+        <div className="flex items-start gap-notion-md p-notion-lg bg-notion-yellow-light/50 rounded-notion-xl">
+          <Info className="h-4 w-4 text-notion-yellow flex-shrink-0 mt-0.5" />
+          <p className="text-notion-sm text-notion-yellow">
+            Select at least one more product to start comparing
           </p>
         </div>
       )}
 
       {/* Store Results */}
       {storeEntries.map(([storeId, store]) => {
-        // Only show stores that have completed (successfully or with error)
         if (store.status !== 'completed' && store.status !== 'error') {
           return null;
         }
 
         const isExpanded = expandedStores[storeId];
+        const productCount = store.products?.length || 0;
 
         return (
-          <div key={storeId} className="space-y-notion-md">
-            {/* Compact Store Header - Now Clickable */}
+          <div key={storeId} className="card-notion overflow-hidden animate-fade-in">
+            {/* Store Header */}
             <button
               onClick={() => toggleStoreExpansion(storeId)}
-              className="w-full flex items-center justify-between gap-notion-sm pb-notion-sm border-b border-notion-200 hover:bg-notion-50 -mx-notion-md px-notion-md py-notion-sm rounded-notion transition-colors duration-150"
+              className="w-full flex items-center justify-between p-notion-lg hover:bg-notion-50 transition-colors duration-150"
             >
-              <div className="flex items-center gap-notion-sm">
-                <div className="w-5 h-5 bg-notion-100 rounded flex items-center justify-center">
-                  <Store className="h-3 w-3 text-notion-600" />
+              <div className="flex items-center gap-notion-md">
+                <div className="w-8 h-8 bg-notion-100 rounded-notion-lg flex items-center justify-center">
+                  <Store className="h-4 w-4 text-notion-600" />
                 </div>
                 <div className="text-left">
-                  <h3 className="text-notion-body font-medium">
+                  <h3 className="text-notion-sm font-semibold text-notion-900">
                     {store.name}
                   </h3>
-                  <span className="text-notion-xs text-notion-500">
-                    {store.status === 'error' 
-                      ? 'Search failed' 
-                      : `${store.products?.length || 0} products found`
+                  <span className="text-notion-xs text-notion-400">
+                    {store.status === 'error'
+                      ? 'Search failed'
+                      : `${productCount} product${productCount !== 1 ? 's' : ''}`
                     }
                   </span>
                 </div>
               </div>
               <div className="flex items-center gap-notion-sm">
+                {productCount > 0 && (
+                  <span className="text-notion-xs font-medium text-notion-400 bg-notion-100 px-2 py-0.5 rounded-notion">
+                    {productCount}
+                  </span>
+                )}
                 {isExpanded ? (
-                  <ChevronUp className="h-4 w-4 text-notion-500" />
+                  <ChevronUp className="h-4 w-4 text-notion-400" />
                 ) : (
-                  <ChevronDown className="h-4 w-4 text-notion-500" />
+                  <ChevronDown className="h-4 w-4 text-notion-400" />
                 )}
               </div>
             </button>
 
             {/* Collapsible Content */}
             {isExpanded && (
-              <div className="space-y-notion-lg">
+              <div className="border-t border-notion-200">
                 {/* Error State */}
                 {store.status === 'error' && (
-                  <div className="bg-notion-red-light border border-notion-red border-opacity-20 rounded-notion-lg p-notion-lg">
+                  <div className="m-notion-lg bg-notion-red-light/50 rounded-notion-lg p-notion-lg">
                     <div className="flex items-start gap-notion-md">
-                      <AlertTriangle className="h-5 w-5 text-notion-red flex-shrink-0 mt-0.5" />
+                      <AlertTriangle className="h-4 w-4 text-notion-red flex-shrink-0 mt-0.5" />
                       <div>
-                        <p className="text-notion-body text-notion-red font-medium">
-                          Error loading from {store.name}
+                        <p className="text-notion-sm text-notion-red font-medium">
+                          Could not load from {store.name}
                         </p>
-                        <p className="text-notion-caption text-notion-red mt-1">
-                          {store.error}
-                        </p>
+                        {store.error && (
+                          <p className="text-notion-xs text-notion-red/70 mt-1">
+                            {store.error}
+                          </p>
+                        )}
                       </div>
                     </div>
                   </div>
@@ -186,20 +167,22 @@ const ProgressiveSearchResults: FC<ProgressiveSearchResultsProps> = ({
 
                 {/* Products Grid */}
                 {store.products && store.products.length > 0 ? (
-                  <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-notion-lg">
-                    {store.products.map((product) => (
-                      <ProductCard
-                        key={`${storeId}-${product.id}`}
-                        product={product}
-                        onSelect={(product) => onProductSelect(storeId, product)}
-                        isSelected={isProductSelected(storeId, product.id)}
-                        showSelectButton={true}
-                      />
-                    ))}
+                  <div className="p-notion-lg">
+                    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-notion-md">
+                      {store.products.map((product) => (
+                        <ProductCard
+                          key={`${storeId}-${product.id}`}
+                          product={product}
+                          onSelect={(product) => onProductSelect(storeId, product)}
+                          isSelected={isProductSelected(storeId, product.id)}
+                          showSelectButton={true}
+                        />
+                      ))}
+                    </div>
                   </div>
                 ) : store.status === 'completed' && (
-                  <div className="text-center py-notion-2xl">
-                    <p className="text-notion-caption">No products found in {store.name}</p>
+                  <div className="text-center py-notion-3xl">
+                    <p className="text-notion-sm text-notion-400">No products found</p>
                   </div>
                 )}
               </div>
@@ -210,14 +193,53 @@ const ProgressiveSearchResults: FC<ProgressiveSearchResultsProps> = ({
 
       {/* No Results State */}
       {searchState.isComplete && !hasAnyProducts && (
-        <div className="text-center py-notion-3xl">
-          <div className="w-16 h-16 bg-notion-100 rounded-notion-lg flex items-center justify-center mx-auto mb-notion-lg">
-            <ShoppingBag className="h-8 w-8 text-notion-400" />
+        <div className="text-center py-notion-4xl">
+          <div className="w-16 h-16 bg-notion-100 rounded-notion-2xl flex items-center justify-center mx-auto mb-notion-xl">
+            <ShoppingBag className="h-8 w-8 text-notion-300" />
           </div>
-          <h3 className="text-notion-subheading mb-notion-sm">No products found</h3>
-          <p className="text-notion-caption max-w-md mx-auto">
-            Try searching with different keywords or check your spelling. Make sure to use specific product names for better results.
+          <h3 className="text-notion-lg font-semibold text-notion-900 mb-notion-sm">No products found</h3>
+          <p className="text-notion-sm text-notion-500 max-w-md mx-auto">
+            Try searching with different keywords or check your spelling.
           </p>
+        </div>
+      )}
+
+      {/* Sticky Compare Bar */}
+      {selectedCount > 0 && (
+        <div className="fixed bottom-0 left-0 right-0 z-40 animate-slide-up">
+          <div className="bg-white border-t border-notion-200 shadow-notion-float">
+            <div className="max-w-6xl mx-auto px-notion-xl py-notion-lg">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-notion-md">
+                  <div className="w-8 h-8 bg-notion-blue rounded-notion-lg flex items-center justify-center text-white text-notion-sm font-bold">
+                    {selectedCount}
+                  </div>
+                  <div>
+                    <p className="text-notion-sm font-medium text-notion-900">
+                      {selectedCount} product{selectedCount !== 1 ? 's' : ''} selected
+                    </p>
+                    {selectedCount < 2 && (
+                      <p className="text-notion-xs text-notion-400">
+                        Select one more to compare
+                      </p>
+                    )}
+                  </div>
+                </div>
+                <button
+                  onClick={onCompare}
+                  disabled={selectedCount < 2}
+                  className={`flex items-center gap-notion-sm px-notion-2xl py-notion-md rounded-notion-xl font-medium text-notion-sm transition-all duration-200 ${
+                    selectedCount >= 2
+                      ? 'bg-notion-blue text-white shadow-sm hover:bg-notion-blue-dark hover:shadow-md'
+                      : 'bg-notion-100 text-notion-400 cursor-not-allowed'
+                  }`}
+                >
+                  Compare
+                  <ArrowRight className="h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
         </div>
       )}
     </div>

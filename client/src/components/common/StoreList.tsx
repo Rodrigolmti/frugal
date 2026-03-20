@@ -14,39 +14,34 @@ const StoreList: FC<StoreListProps> = ({ onStoreSelect }) => {
   };
 
   return (
-    <div className="space-y-notion-lg">
+    <div className="space-y-notion-xl">
       <div className="text-center">
-        <h3 className="text-notion-subheading mb-notion-sm">
-          Supported Canadian Stores
-        </h3>
-        <p className="text-notion-caption text-notion-500">
-          Compare prices across these popular Canadian grocery stores
+        <p className="text-notion-sm font-medium text-notion-500 uppercase tracking-wider">
+          Supported Stores
         </p>
       </div>
-      
-      <div className="flex flex-wrap justify-center gap-notion-lg">
+
+      <div className="flex flex-wrap justify-center gap-notion-md">
         {CANADIAN_STORES.map((store) => (
           <button
             key={store.id}
             onClick={() => handleStoreClick(store.id)}
-            className="group flex flex-col items-center gap-notion-md p-notion-lg rounded-notion-lg border border-notion-200 hover:border-notion-300 hover:shadow-notion transition-all duration-200 bg-white min-w-[120px]"
+            className="group flex items-center gap-notion-sm py-notion-sm px-notion-lg rounded-notion-2xl border border-notion-200 hover:border-notion-300 bg-white hover:shadow-notion-md transition-all duration-200"
           >
-            <div className={`w-12 h-12 ${store.color} rounded-notion-lg flex items-center justify-center text-white group-hover:scale-105 transition-transform duration-200`}>
+            <div className={`w-8 h-8 ${store.color} rounded-notion-lg flex items-center justify-center text-white flex-shrink-0`}>
               {store.logo ? (
-                <img 
-                  src={store.logo} 
+                <img
+                  src={store.logo}
                   alt={store.name}
-                  className="w-8 h-8 object-contain"
+                  className="w-5 h-5 object-contain"
                 />
               ) : (
-                <Store className="h-6 w-6" />
+                <Store className="h-4 w-4" />
               )}
             </div>
-            <div className="text-center">
-              <div className="text-notion-sm font-medium text-notion-900 group-hover:text-notion-700">
-                {store.displayName}
-              </div>
-            </div>
+            <span className="text-notion-sm font-medium text-notion-700 group-hover:text-notion-900 transition-colors whitespace-nowrap">
+              {store.displayName}
+            </span>
           </button>
         ))}
       </div>

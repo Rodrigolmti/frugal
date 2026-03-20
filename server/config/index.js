@@ -4,28 +4,40 @@ const config = {
   port: process.env.PORT || 3001,
   nodeEnv: process.env.NODE_ENV || 'development',
   debugScraping: process.env.DEBUG_SCRAPING === 'true',
-  
-  // CORS settings
+
   cors: {
-    origin: process.env.NODE_ENV === 'production' 
-      ? process.env.FRONTEND_URL 
+    origin: process.env.NODE_ENV === 'production'
+      ? process.env.FRONTEND_URL
       : ['http://localhost:5173', 'http://localhost:3000'],
-    credentials: true
+    credentials: true,
   },
 
-  // Rate limiting
   rateLimit: {
-    windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 100 // limit each IP to 100 requests per windowMs
+    windowMs: 15 * 60 * 1000,
+    max: 100,
   },
 
-  // Scraping settings
   scraping: {
     timeout: 30000,
-    userAgent: 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-    viewport: { width: 1920, height: 1080 },
-    maxConcurrentStores: 6
-  }
+    maxConcurrentStores: 6,
+  },
+
+  browserPool: {
+    min: 0,
+    max: 4,
+    idleTimeoutMs: 60000,
+    acquireTimeoutMs: 30000,
+  },
+
+  cache: {
+    maxEntries: 200,
+    defaultTtlMs: 5 * 60 * 1000,
+  },
+
+  circuitBreaker: {
+    failureThreshold: 3,
+    cooldownMs: 60000,
+  },
 };
 
 module.exports = config;
